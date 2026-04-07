@@ -4,6 +4,9 @@
 //  Analysis: age-group breakdown, city & mode breakdown
 // ============================================================
 
+// ============================================================
+// SECTION 1: Includes and Constants
+// ============================================================
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -11,6 +14,9 @@
 #include <string>
 #include <chrono>
 
+// ============================================================
+// SECTION 2: Resident Struct and Data Structures
+// ============================================================
 // ─────────────────────────────────────────────────────────────
 //  Resident struct
 // ─────────────────────────────────────────────────────────────
@@ -75,6 +81,18 @@ struct LinkedList {
         while (src) { append(src->resident); src = src->next; }
     }
 
+    // Copy constructor
+    LinkedList(const LinkedList& other) : head(nullptr), size(0) {
+        copyFrom(other);
+    }
+
+    // Copy assignment operator
+    LinkedList& operator=(const LinkedList& other) {
+        if (this != &other)
+            copyFrom(other);
+        return *this;
+    }
+
     ~LinkedList() {
         Node* cur = head;
         while (cur) {
@@ -96,6 +114,9 @@ static std::string trim(const std::string& s) {
     return s.substr(start, end - start + 1);
 }
 
+// ============================================================
+// SECTION 3: CSV Loading
+// ============================================================
 static bool parseLine(const std::string& line,
                       const std::string& city,
                       Resident&          out)
@@ -177,6 +198,9 @@ bool loadCSV(LinkedList&        list,
     return true;
 }
 
+// ============================================================
+// SECTION 4: Age Group Categorisation and Analysis
+// ============================================================
 // ─────────────────────────────────────────────────────────────
 //  getAgeGroup — maps age to a descriptive label
 // ─────────────────────────────────────────────────────────────
@@ -218,10 +242,12 @@ struct GroupData {
     ModeStats modes[MAX_MODES];
     int       modeCount;
     double    groupTotal;
+    int       residentCount;
 
-    GroupData() : modeCount(0), groupTotal(0.0) {}
+    GroupData() : modeCount(0), groupTotal(0.0), residentCount(0) {}
 
     void record(const std::string& mode, double emission) {
+        ++residentCount;
         for (int i = 0; i < modeCount; ++i) {
             if (modes[i].mode == mode) {
                 modes[i].count++;
@@ -324,6 +350,10 @@ static void printGroupTable(const GroupData& g) {
                   << " (" << g.modes[bestIdx].count << " residents)\n";
     std::cout << "  Total group emission : " << std::fixed << std::setprecision(2)
               << g.groupTotal << " kg CO2/month\n";
+    double avgPerResident = g.residentCount > 0
+                          ? g.groupTotal / g.residentCount : 0.0;
+    std::cout << "  Avg emission/resident: " << std::fixed << std::setprecision(2)
+              << avgPerResident << " kg CO2/month\n";
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -493,6 +523,9 @@ void analyseByAgeGroup(const LinkedList& list) {
     }
 }
 
+// ============================================================
+// SECTION 5: Carbon Emission Analysis by City
+// ============================================================
 // ─────────────────────────────────────────────────────────────
 //  analyseByCity — array version
 // ─────────────────────────────────────────────────────────────
@@ -553,6 +586,9 @@ static void printResident(const Resident& r) {
               << "\n";
 }
 
+// ============================================================
+// SECTION 6: Sorting Algorithms - Array
+// ============================================================
 // =============================================================
 //  SORTING — Array versions
 // =============================================================
@@ -596,6 +632,9 @@ void insertionSortArray(ResidentArray& arr) {
     }
 }
 
+// ============================================================
+// SECTION 7: Sorting Algorithms - Linked List
+// ============================================================
 // =============================================================
 //  SORTING — Linked-list versions (swap node DATA, not pointers)
 // =============================================================
@@ -662,6 +701,9 @@ void insertionSortList(LinkedList& list) {
     }
 }
 
+// ============================================================
+// SECTION 8: Sorting Demo and Performance Tracking
+// ============================================================
 // =============================================================
 //  Sorted-table printer (first N records)
 // =============================================================
@@ -713,8 +755,6 @@ static void printSortedList(const LinkedList& list, int n) {
 // =============================================================
 //  Performance tracking
 // =============================================================
-const int MAX_PERF = 6;  // 3 algorithms x 2 data structures
-
 struct PerfRecord {
     std::string algorithm;
     std::string dataStructure;
@@ -750,126 +790,9 @@ static void printPerfTable(PerfRecord perf[], int count) {
               << "-+-" << std::string(14, '-')
               << "-+-" << std::string(14, '-') << "-+\n";
 }
-
-// =============================================================
-//  runSortingDemo — sorts copies, prints tables, records perf
-// =============================================================
-void runSortingDemo(const ResidentArray& original, const LinkedList& originalList) {
-    PerfRecord perf[MAX_PERF];
-    int pi = 0;
-    const int SHOW = 20;
-    std::size_t arrMem  = sizeof(Resident) * original.count;
-    std::size_t listMem = sizeof(Resident) * originalList.size;
-
-    // ── 1. Bubble Sort by Age (ascending) ────────────────────
-    {
-        ResidentArray a;
-        for (int i = 0; i < original.count; ++i) a.data[i] = original.data[i];
-        a.count = original.count;
-
-        auto t0 = std::chrono::high_resolution_clock::now();
-        bubbleSortArray(a);
-        auto t1 = std::chrono::high_resolution_clock::now();
-        long long us = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
-
-        std::cout << "\n============================================================\n";
-        std::cout << "  Bubble Sort by Age (ascending)  [Array]\n";
-        std::cout << "  Time: " << us << " us   Memory: " << arrMem << " bytes\n";
-        std::cout << "============================================================\n";
-        printSortedArray(a, SHOW);
-        perf[pi++] = {"Bubble Sort (Age)", "Array", us, arrMem};
-    }
-    {
-        LinkedList ll;
-        ll.copyFrom(originalList);
-
-        auto t0 = std::chrono::high_resolution_clock::now();
-        bubbleSortList(ll);
-        auto t1 = std::chrono::high_resolution_clock::now();
-        long long us = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
-
-        std::cout << "\n============================================================\n";
-        std::cout << "  Bubble Sort by Age (ascending)  [Linked List]\n";
-        std::cout << "  Time: " << us << " us   Memory: " << listMem << " bytes\n";
-        std::cout << "============================================================\n";
-        printSortedList(ll, SHOW);
-        perf[pi++] = {"Bubble Sort (Age)", "Linked List", us, listMem};
-    }
-
-    // ── 2. Selection Sort by DailyDistance (ascending) ───────
-    {
-        ResidentArray a;
-        for (int i = 0; i < original.count; ++i) a.data[i] = original.data[i];
-        a.count = original.count;
-
-        auto t0 = std::chrono::high_resolution_clock::now();
-        selectionSortArray(a);
-        auto t1 = std::chrono::high_resolution_clock::now();
-        long long us = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
-
-        std::cout << "\n============================================================\n";
-        std::cout << "  Selection Sort by DailyDistance (ascending)  [Array]\n";
-        std::cout << "  Time: " << us << " us   Memory: " << arrMem << " bytes\n";
-        std::cout << "============================================================\n";
-        printSortedArray(a, SHOW);
-        perf[pi++] = {"Selection Sort (Dist)", "Array", us, arrMem};
-    }
-    {
-        LinkedList ll;
-        ll.copyFrom(originalList);
-
-        auto t0 = std::chrono::high_resolution_clock::now();
-        selectionSortList(ll);
-        auto t1 = std::chrono::high_resolution_clock::now();
-        long long us = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
-
-        std::cout << "\n============================================================\n";
-        std::cout << "  Selection Sort by DailyDistance (ascending)  [Linked List]\n";
-        std::cout << "  Time: " << us << " us   Memory: " << listMem << " bytes\n";
-        std::cout << "============================================================\n";
-        printSortedList(ll, SHOW);
-        perf[pi++] = {"Selection Sort (Dist)", "Linked List", us, listMem};
-    }
-
-    // ── 3. Insertion Sort by monthlyEmission (descending) ────
-    {
-        ResidentArray a;
-        for (int i = 0; i < original.count; ++i) a.data[i] = original.data[i];
-        a.count = original.count;
-
-        auto t0 = std::chrono::high_resolution_clock::now();
-        insertionSortArray(a);
-        auto t1 = std::chrono::high_resolution_clock::now();
-        long long us = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
-
-        std::cout << "\n============================================================\n";
-        std::cout << "  Insertion Sort by monthlyEmission (descending)  [Array]\n";
-        std::cout << "  Time: " << us << " us   Memory: " << arrMem << " bytes\n";
-        std::cout << "============================================================\n";
-        printSortedArray(a, SHOW);
-        perf[pi++] = {"Insertion Sort (CO2)", "Array", us, arrMem};
-    }
-    {
-        LinkedList ll;
-        ll.copyFrom(originalList);
-
-        auto t0 = std::chrono::high_resolution_clock::now();
-        insertionSortList(ll);
-        auto t1 = std::chrono::high_resolution_clock::now();
-        long long us = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
-
-        std::cout << "\n============================================================\n";
-        std::cout << "  Insertion Sort by monthlyEmission (descending)  [Linked List]\n";
-        std::cout << "  Time: " << us << " us   Memory: " << listMem << " bytes\n";
-        std::cout << "============================================================\n";
-        printSortedList(ll, SHOW);
-        perf[pi++] = {"Insertion Sort (CO2)", "Linked List", us, listMem};
-    }
-
-    // ── Performance comparison ───────────────────────────────
-    printPerfTable(perf, pi);
-}
-
+// ============================================================
+// SECTION 9: Search Algorithms - Array
+// ============================================================
 // =============================================================
 //  SEARCH INFRASTRUCTURE
 // =============================================================
@@ -926,14 +849,13 @@ static void printResultSet(const ResultSet& rs) {
 }
 
 // ── Search performance tracker ────────────────────────────────
-const int MAX_SEARCH_PERF = 10;
-
 struct SearchPerfRecord {
     std::string searchType;
     std::string dataStructure;
     std::string criteria;
     int         resultsFound;
     long long   timeMicroseconds;
+    std::size_t memoryBytes;
 };
 
 static void printSearchPerfTable(SearchPerfRecord perf[], int count) {
@@ -944,30 +866,35 @@ static void printSearchPerfTable(SearchPerfRecord perf[], int count) {
               << "-+-" << std::string(14, '-')
               << "-+-" << std::string(32, '-')
               << "-+-" << std::string(8,  '-')
-              << "-+-" << std::string(10, '-') << "-+\n";
+              << "-+-" << std::string(10, '-')
+              << "-+-" << std::string(14, '-') << "-+\n";
     std::cout << "  | " << std::left  << std::setw(16) << "Search Type"
               << " | " << std::left  << std::setw(14) << "Data Structure"
               << " | " << std::left  << std::setw(32) << "Criteria"
               << " | " << std::right << std::setw(8)  << "Found"
               << " | " << std::right << std::setw(10) << "Time (us)"
+              << " | " << std::right << std::setw(14) << "Memory (bytes)"
               << " |\n";
     std::cout << "  +-" << std::string(16, '-')
               << "-+-" << std::string(14, '-')
               << "-+-" << std::string(32, '-')
               << "-+-" << std::string(8,  '-')
-              << "-+-" << std::string(10, '-') << "-+\n";
+              << "-+-" << std::string(10, '-')
+              << "-+-" << std::string(14, '-') << "-+\n";
     for (int i = 0; i < count; ++i)
         std::cout << "  | " << std::left  << std::setw(16) << perf[i].searchType
                   << " | " << std::left  << std::setw(14) << perf[i].dataStructure
                   << " | " << std::left  << std::setw(32) << perf[i].criteria
                   << " | " << std::right << std::setw(8)  << perf[i].resultsFound
                   << " | " << std::right << std::setw(10) << perf[i].timeMicroseconds
+                  << " | " << std::right << std::setw(14) << perf[i].memoryBytes
                   << " |\n";
     std::cout << "  +-" << std::string(16, '-')
               << "-+-" << std::string(14, '-')
               << "-+-" << std::string(32, '-')
               << "-+-" << std::string(8,  '-')
-              << "-+-" << std::string(10, '-') << "-+\n";
+              << "-+-" << std::string(10, '-')
+              << "-+-" << std::string(14, '-') << "-+\n";
 }
 
 // =============================================================
@@ -1001,6 +928,9 @@ ResultSet linearSearchDistance(const ResidentArray& arr, double threshold) {
     return rs;
 }
 
+// ============================================================
+// SECTION 10: Search Algorithms - Linked List
+// ============================================================
 // =============================================================
 //  LINEAR SEARCH — Linked List
 // =============================================================
@@ -1081,127 +1011,9 @@ ResultSet binarySearchAgeRange(const LinkedList& list, int lo, int hi) {
         rs.add(idx[i]);
     return rs;
 }
-
-// =============================================================
-//  runSearchDemo
-// =============================================================
-void runSearchDemo(const ResidentArray& arr, const LinkedList& list) {
-    SearchPerfRecord perf[MAX_SEARCH_PERF];
-    int pi = 0;
-
-    // We need age-sorted copies for binary search
-    ResidentArray sortedArr;
-    for (int i = 0; i < arr.count; ++i) sortedArr.data[i] = arr.data[i];
-    sortedArr.count = arr.count;
-    bubbleSortArray(sortedArr);   // reuse existing sort
-
-    LinkedList sortedList;
-    sortedList.copyFrom(list);
-    bubbleSortList(sortedList);
-
-    std::cout << "\n============================================================\n";
-    std::cout << "  SEARCH DEMONSTRATIONS\n";
-    std::cout << "============================================================\n";
-
-    // ── Linear: age range 26-45 ──────────────────────────────
-    {
-        auto t0 = std::chrono::high_resolution_clock::now();
-        ResultSet rs = linearSearchAgeRange(arr, 26, 45);
-        auto t1 = std::chrono::high_resolution_clock::now();
-        long long us = std::chrono::duration_cast<std::chrono::microseconds>(t1-t0).count();
-
-        std::cout << "\n  Linear Search | Age range 26-45 | Array\n";
-        std::cout << "  Found: " << rs.count << " records  |  Time: " << us << " us\n";
-        printResultSet(rs);
-        perf[pi++] = {"Linear", "Array", "Age range 26-45", rs.count, us};
-    }
-    {
-        auto t0 = std::chrono::high_resolution_clock::now();
-        ResultSet rs = linearSearchAgeRange(list, 26, 45);
-        auto t1 = std::chrono::high_resolution_clock::now();
-        long long us = std::chrono::duration_cast<std::chrono::microseconds>(t1-t0).count();
-
-        std::cout << "\n  Linear Search | Age range 26-45 | Linked List\n";
-        std::cout << "  Found: " << rs.count << " records  |  Time: " << us << " us\n";
-        printResultSet(rs);
-        perf[pi++] = {"Linear", "Linked List", "Age range 26-45", rs.count, us};
-    }
-
-    // ── Linear: mode = "Car" ─────────────────────────────────
-    {
-        auto t0 = std::chrono::high_resolution_clock::now();
-        ResultSet rs = linearSearchMode(arr, "Car");
-        auto t1 = std::chrono::high_resolution_clock::now();
-        long long us = std::chrono::duration_cast<std::chrono::microseconds>(t1-t0).count();
-
-        std::cout << "\n  Linear Search | Mode = \"Car\" | Array\n";
-        std::cout << "  Found: " << rs.count << " records  |  Time: " << us << " us\n";
-        printResultSet(rs);
-        perf[pi++] = {"Linear", "Array", "Mode = Car", rs.count, us};
-    }
-    {
-        auto t0 = std::chrono::high_resolution_clock::now();
-        ResultSet rs = linearSearchMode(list, "Car");
-        auto t1 = std::chrono::high_resolution_clock::now();
-        long long us = std::chrono::duration_cast<std::chrono::microseconds>(t1-t0).count();
-
-        std::cout << "\n  Linear Search | Mode = \"Car\" | Linked List\n";
-        std::cout << "  Found: " << rs.count << " records  |  Time: " << us << " us\n";
-        printResultSet(rs);
-        perf[pi++] = {"Linear", "Linked List", "Mode = Car", rs.count, us};
-    }
-
-    // ── Linear: distance > 15 ────────────────────────────────
-    {
-        auto t0 = std::chrono::high_resolution_clock::now();
-        ResultSet rs = linearSearchDistance(arr, 15.0);
-        auto t1 = std::chrono::high_resolution_clock::now();
-        long long us = std::chrono::duration_cast<std::chrono::microseconds>(t1-t0).count();
-
-        std::cout << "\n  Linear Search | DailyDistance > 15 km | Array\n";
-        std::cout << "  Found: " << rs.count << " records  |  Time: " << us << " us\n";
-        printResultSet(rs);
-        perf[pi++] = {"Linear", "Array", "Distance > 15 km", rs.count, us};
-    }
-    {
-        auto t0 = std::chrono::high_resolution_clock::now();
-        ResultSet rs = linearSearchDistance(list, 15.0);
-        auto t1 = std::chrono::high_resolution_clock::now();
-        long long us = std::chrono::duration_cast<std::chrono::microseconds>(t1-t0).count();
-
-        std::cout << "\n  Linear Search | DailyDistance > 15 km | Linked List\n";
-        std::cout << "  Found: " << rs.count << " records  |  Time: " << us << " us\n";
-        printResultSet(rs);
-        perf[pi++] = {"Linear", "Linked List", "Distance > 15 km", rs.count, us};
-    }
-
-    // ── Binary: age range 26-45 (on age-sorted copy) ─────────
-    {
-        auto t0 = std::chrono::high_resolution_clock::now();
-        ResultSet rs = binarySearchAgeRange(sortedArr, 26, 45);
-        auto t1 = std::chrono::high_resolution_clock::now();
-        long long us = std::chrono::duration_cast<std::chrono::microseconds>(t1-t0).count();
-
-        std::cout << "\n  Binary Search | Age range 26-45 (sorted) | Array\n";
-        std::cout << "  Found: " << rs.count << " records  |  Time: " << us << " us\n";
-        printResultSet(rs);
-        perf[pi++] = {"Binary", "Array (sorted)", "Age range 26-45", rs.count, us};
-    }
-    {
-        auto t0 = std::chrono::high_resolution_clock::now();
-        ResultSet rs = binarySearchAgeRange(sortedList, 26, 45);
-        auto t1 = std::chrono::high_resolution_clock::now();
-        long long us = std::chrono::duration_cast<std::chrono::microseconds>(t1-t0).count();
-
-        std::cout << "\n  Binary Search | Age range 26-45 (sorted) | Linked List\n";
-        std::cout << "  Found: " << rs.count << " records  |  Time: " << us << " us\n";
-        printResultSet(rs);
-        perf[pi++] = {"Binary", "List (sorted)", "Age range 26-45", rs.count, us};
-    }
-
-    printSearchPerfTable(perf, pi);
-}
-
+// ============================================================
+// SECTION 11: Search Demo and Performance Tracking
+// ============================================================
 // =============================================================
 //  SESSION PERFORMANCE ACCUMULATOR
 // =============================================================
@@ -1221,9 +1033,10 @@ struct SessionPerf {
             sorts[sortCount++] = {algo, ds, us, mem};
     }
     void addSearch(const std::string& type, const std::string& ds,
-                   const std::string& criteria, int found, long long us) {
+                   const std::string& criteria, int found, long long us,
+                   std::size_t mem) {
         if (searchCount < MAX_SESSION_PERF)
-            searches[searchCount++] = {type, ds, criteria, found, us};
+            searches[searchCount++] = {type, ds, criteria, found, us, mem};
     }
 };
 
@@ -1299,6 +1112,82 @@ static void showPerfSummary(const SessionPerf& sp) {
         std::cout << "\n  -- Search Results --\n";
         printSearchPerfTable(const_cast<SearchPerfRecord*>(sp.searches), sp.searchCount);
     }
+
+    // ── Array vs Linked List Analysis ────────────────────────
+    std::cout << "\n";
+    menuLine();
+    std::cout << "  === ARRAY vs LINKED LIST: ANALYSIS ===\n";
+    menuLine();
+
+    if (sp.sortCount > 0) {
+        long long arrTotal = 0; int arrCnt = 0;
+        long long lstTotal = 0; int lstCnt = 0;
+        for (int i = 0; i < sp.sortCount; ++i) {
+            const PerfRecord& r = sp.sorts[i];
+            if (r.dataStructure.find("Array") != std::string::npos) {
+                arrTotal += r.timeMicroseconds; ++arrCnt;
+            } else {
+                lstTotal += r.timeMicroseconds; ++lstCnt;
+            }
+        }
+        double arrAvg = arrCnt > 0 ? static_cast<double>(arrTotal) / arrCnt : 0.0;
+        double lstAvg = lstCnt > 0 ? static_cast<double>(lstTotal) / lstCnt : 0.0;
+        std::cout << "\n  -- Sorting Performance (average microseconds) --\n";
+        std::cout << "  Array       : " << std::fixed << std::setprecision(1) << arrAvg << " us\n";
+        std::cout << "  Linked List : " << lstAvg << " us\n";
+        if (arrCnt > 0 && lstCnt > 0) {
+            if (arrAvg < lstAvg)
+                std::cout << "  => Array was FASTER on average for sorting.\n";
+            else if (lstAvg < arrAvg)
+                std::cout << "  => Linked List was FASTER on average for sorting.\n";
+            else
+                std::cout << "  => Both structures performed equally for sorting.\n";
+        }
+    }
+
+    if (sp.searchCount > 0) {
+        long long arrTotal = 0; int arrCnt = 0;
+        long long lstTotal = 0; int lstCnt = 0;
+        for (int i = 0; i < sp.searchCount; ++i) {
+            const SearchPerfRecord& r = sp.searches[i];
+            if (r.dataStructure.find("Array") != std::string::npos) {
+                arrTotal += r.timeMicroseconds; ++arrCnt;
+            } else {
+                lstTotal += r.timeMicroseconds; ++lstCnt;
+            }
+        }
+        double arrAvg = arrCnt > 0 ? static_cast<double>(arrTotal) / arrCnt : 0.0;
+        double lstAvg = lstCnt > 0 ? static_cast<double>(lstTotal) / lstCnt : 0.0;
+        std::cout << "\n  -- Search Performance (average microseconds) --\n";
+        std::cout << "  Array       : " << std::fixed << std::setprecision(1) << arrAvg << " us\n";
+        std::cout << "  Linked List : " << lstAvg << " us\n";
+        if (arrCnt > 0 && lstCnt > 0) {
+            if (arrAvg < lstAvg)
+                std::cout << "  => Array was FASTER on average for searching.\n";
+            else if (lstAvg < arrAvg)
+                std::cout << "  => Linked List was FASTER on average for searching.\n";
+            else
+                std::cout << "  => Both structures performed equally for searching.\n";
+        }
+    }
+
+    std::cout << "\n  -- WHY: Algorithmic Explanation --\n";
+    std::cout << "  Arrays offer O(1) random access making swaps faster in\n";
+    std::cout << "  sorting. Linked lists avoid data shifting for insertions\n";
+    std::cout << "  but incur pointer traversal overhead on each comparison.\n";
+
+    std::cout << "\n  -- Real-World Trade-offs --\n";
+    std::cout << "  Cache locality  : Arrays store elements contiguously in\n";
+    std::cout << "                    memory, maximising CPU cache hits.\n";
+    std::cout << "                    Linked list nodes are heap-scattered,\n";
+    std::cout << "                    causing frequent cache misses.\n";
+    std::cout << "  Dynamic sizing  : Linked lists grow/shrink in O(1) without\n";
+    std::cout << "                    bulk reallocation. Arrays need a full\n";
+    std::cout << "                    copy when capacity is exceeded.\n";
+    std::cout << "  Memory overhead : Each linked list node carries an extra\n";
+    std::cout << "                    pointer (" << sizeof(void*) << " bytes on this platform) per\n";
+    std::cout << "                    element; flat arrays have zero overhead.\n";
+    menuLine();
 }
 
 // =============================================================
@@ -1345,7 +1234,7 @@ static void doSortArray(ResidentArray& arr, SessionPerf& sp) {
 }
 
 static void doSortList(LinkedList& list, SessionPerf& sp) {
-    std::size_t mem = sizeof(Resident) * list.size;
+    std::size_t mem = (sizeof(Resident) + sizeof(void*)) * list.size;
     const int SHOW = 20;
     while (true) {
         menuTitle("  SORTING — Linked List");
@@ -1395,6 +1284,7 @@ static void makeSortedArrayCopy(const ResidentArray& src, ResidentArray& dst) {
 }
 
 static void doSearchArray(const ResidentArray& arr, SessionPerf& sp) {
+    const std::size_t arrMem = sizeof(Resident) * arr.count;
     while (true) {
         menuTitle("  SEARCHING — Array");
         std::cout << "  1. Linear Search  — by Age Group (enter range)\n";
@@ -1421,7 +1311,7 @@ static void doSearchArray(const ResidentArray& arr, SessionPerf& sp) {
             std::cout << "\n  Linear Search | " << crit << " | Array\n";
             std::cout << "  Found: " << rs.count << " records  |  Time: " << us << " us\n";
             printResultSet(rs);
-            sp.addSearch("Linear", "Array", crit, rs.count, us);
+            sp.addSearch("Linear", "Array", crit, rs.count, us, arrMem);
         }
         if (ch == 2 || ch == 5) {
             std::string mode = "Car";
@@ -1434,7 +1324,7 @@ static void doSearchArray(const ResidentArray& arr, SessionPerf& sp) {
             std::cout << "\n  Linear Search | " << crit << " | Array\n";
             std::cout << "  Found: " << rs.count << " records  |  Time: " << us << " us\n";
             printResultSet(rs);
-            sp.addSearch("Linear", "Array", crit, rs.count, us);
+            sp.addSearch("Linear", "Array", crit, rs.count, us, arrMem);
         }
         if (ch == 3 || ch == 5) {
             double thr = 15.0;
@@ -1447,7 +1337,7 @@ static void doSearchArray(const ResidentArray& arr, SessionPerf& sp) {
             std::cout << "\n  Linear Search | " << crit << " | Array\n";
             std::cout << "  Found: " << rs.count << " records  |  Time: " << us << " us\n";
             printResultSet(rs);
-            sp.addSearch("Linear", "Array", crit, rs.count, us);
+            sp.addSearch("Linear", "Array", crit, rs.count, us, arrMem);
         }
         if (ch == 4 || ch == 5) {
             int lo = 26, hi = 45;
@@ -1466,12 +1356,13 @@ static void doSearchArray(const ResidentArray& arr, SessionPerf& sp) {
             std::cout << "\n  Binary Search | " << crit << " (sorted) | Array\n";
             std::cout << "  Found: " << rs.count << " records  |  Time: " << us << " us\n";
             printResultSet(rs);
-            sp.addSearch("Binary", "Array (sorted)", crit, rs.count, us);
+            sp.addSearch("Binary", "Array (sorted)", crit, rs.count, us, arrMem);
         }
     }
 }
 
 static void doSearchList(const LinkedList& list, SessionPerf& sp) {
+    const std::size_t listMem = (sizeof(Resident) + sizeof(void*)) * list.size;
     while (true) {
         menuTitle("  SEARCHING — Linked List");
         std::cout << "  1. Linear Search  — by Age Group (enter range)\n";
@@ -1498,7 +1389,7 @@ static void doSearchList(const LinkedList& list, SessionPerf& sp) {
             std::cout << "\n  Linear Search | " << crit << " | Linked List\n";
             std::cout << "  Found: " << rs.count << " records  |  Time: " << us << " us\n";
             printResultSet(rs);
-            sp.addSearch("Linear", "Linked List", crit, rs.count, us);
+            sp.addSearch("Linear", "Linked List", crit, rs.count, us, listMem);
         }
         if (ch == 2 || ch == 5) {
             std::string mode = "Car";
@@ -1511,7 +1402,7 @@ static void doSearchList(const LinkedList& list, SessionPerf& sp) {
             std::cout << "\n  Linear Search | " << crit << " | Linked List\n";
             std::cout << "  Found: " << rs.count << " records  |  Time: " << us << " us\n";
             printResultSet(rs);
-            sp.addSearch("Linear", "Linked List", crit, rs.count, us);
+            sp.addSearch("Linear", "Linked List", crit, rs.count, us, listMem);
         }
         if (ch == 3 || ch == 5) {
             double thr = 15.0;
@@ -1524,7 +1415,7 @@ static void doSearchList(const LinkedList& list, SessionPerf& sp) {
             std::cout << "\n  Linear Search | " << crit << " | Linked List\n";
             std::cout << "  Found: " << rs.count << " records  |  Time: " << us << " us\n";
             printResultSet(rs);
-            sp.addSearch("Linear", "Linked List", crit, rs.count, us);
+            sp.addSearch("Linear", "Linked List", crit, rs.count, us, listMem);
         }
         if (ch == 4 || ch == 5) {
             int lo = 26, hi = 45;
@@ -1544,11 +1435,14 @@ static void doSearchList(const LinkedList& list, SessionPerf& sp) {
             std::cout << "\n  Binary Search | " << crit << " (sorted) | Linked List\n";
             std::cout << "  Found: " << rs.count << " records  |  Time: " << us << " us\n";
             printResultSet(rs);
-            sp.addSearch("Binary", "List (sorted)", crit, rs.count, us);
+            sp.addSearch("Binary", "List (sorted)", crit, rs.count, us, listMem);
         }
     }
 }
 
+// ============================================================
+// SECTION 12: Insights and Recommendations
+// ============================================================
 // =============================================================
 //  INSIGHTS & RECOMMENDATIONS
 // =============================================================
@@ -1810,6 +1704,9 @@ static void showInsights(const LinkedList& list) {
     printInsights(d, "Singly Linked List");
 }
 
+// ============================================================
+// SECTION 13: Menu System - Array Program
+// ============================================================
 // =============================================================
 //  ARRAY SUB-MENU
 // =============================================================
@@ -1859,9 +1756,9 @@ static void menuArray(ResidentArray& arr, LinkedList& list,
         case 2: {
             if (!loaded) { std::cout << "  Please load data first (Option 1).\n"; break; }
             menuTitle("  CARBON EMISSION ANALYSIS — Array");
-            std::cout << "  a. By Age Group\n";
-            std::cout << "  b. By City\n";
-            std::cout << "  c. Both\n";
+            std::cout << "  1. By Age Group\n";
+            std::cout << "  2. By City\n";
+            std::cout << "  3. Both\n";
             std::cout << "  0. Back\n";
             int sub = readInt("  Choice: ");
             if (sub == 1 || sub == 3) analyseByAgeGroup(arr);
@@ -1896,6 +1793,9 @@ static void menuArray(ResidentArray& arr, LinkedList& list,
     }
 }
 
+// ============================================================
+// SECTION 14: Menu System - Linked List Program
+// ============================================================
 // =============================================================
 //  LINKED LIST SUB-MENU
 // =============================================================
@@ -1981,6 +1881,9 @@ static void menuList(ResidentArray& arr, LinkedList& list,
     }
 }
 
+// ============================================================
+// SECTION 15: Main Entry Point
+// ============================================================
 // =============================================================
 //  main
 // =============================================================
