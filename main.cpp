@@ -1202,10 +1202,619 @@ void runSearchDemo(const ResidentArray& arr, const LinkedList& list) {
     printSearchPerfTable(perf, pi);
 }
 
-// ─────────────────────────────────────────────────────────────
-//  main
-// ─────────────────────────────────────────────────────────────
-int main() {
+// =============================================================
+//  SESSION PERFORMANCE ACCUMULATOR
+// =============================================================
+const int MAX_SESSION_PERF = 60;
+
+struct SessionPerf {
+    PerfRecord       sorts[MAX_SESSION_PERF];
+    int              sortCount;
+    SearchPerfRecord searches[MAX_SESSION_PERF];
+    int              searchCount;
+
+    SessionPerf() : sortCount(0), searchCount(0) {}
+
+    void addSort(const std::string& algo, const std::string& ds,
+                 long long us, std::size_t mem) {
+        if (sortCount < MAX_SESSION_PERF)
+            sorts[sortCount++] = {algo, ds, us, mem};
+    }
+    void addSearch(const std::string& type, const std::string& ds,
+                   const std::string& criteria, int found, long long us) {
+        if (searchCount < MAX_SESSION_PERF)
+            searches[searchCount++] = {type, ds, criteria, found, us};
+    }
+};
+
+// =============================================================
+//  MENU HELPERS
+// =============================================================
+static void menuLine(char c = '=', int w = 60) {
+    std::cout << "  " << std::string(w, c) << "\n";
+}
+static void menuTitle(const std::string& t) {
+    menuLine();
+    std::cout << "  " << t << "\n";
+    menuLine();
+}
+static int readInt(const std::string& prompt) {
+    int v;
+    while (true) {
+        std::cout << prompt;
+        if (std::cin >> v) { std::cin.ignore(1000, '\n'); return v; }
+        std::cin.clear();
+        std::cin.ignore(1000, '\n');
+        std::cout << "  Invalid input. Please enter a number.\n";
+    }
+}
+static double readDouble(const std::string& prompt) {
+    double v;
+    while (true) {
+        std::cout << prompt;
+        if (std::cin >> v) { std::cin.ignore(1000, '\n'); return v; }
+        std::cin.clear();
+        std::cin.ignore(1000, '\n');
+        std::cout << "  Invalid input. Please enter a number.\n";
+    }
+}
+static std::string readLine(const std::string& prompt) {
+    std::cout << prompt;
+    std::string s;
+    std::getline(std::cin, s);
+    return trim(s);
+}
+
+// ── Print first 5 and last 5 records of current data ─────────
+static void printDataPreview(const ResidentArray& arr) {
+    std::cout << "\n  First 5 records:\n";
+    for (int i = 0; i < 5 && i < arr.count; ++i) printResident(arr.data[i]);
+    std::cout << "  Last 5 records:\n";
+    int s = arr.count - 5 < 0 ? 0 : arr.count - 5;
+    for (int i = s; i < arr.count; ++i) printResident(arr.data[i]);
+}
+static void printDataPreview(const LinkedList& list) {
+    std::cout << "\n  First 5 records:\n";
+    const Node* cur = list.head;
+    for (int i = 0; cur && i < 5; ++i, cur = cur->next) printResident(cur->resident);
+    std::cout << "  Last 5 records:\n";
+    cur = list.head;
+    int skip = list.size - 5;
+    for (int i = 0; cur && i < skip; ++i) cur = cur->next;
+    while (cur) { printResident(cur->resident); cur = cur->next; }
+}
+
+// ── Performance summary ───────────────────────────────────────
+static void showPerfSummary(const SessionPerf& sp) {
+    menuTitle("  PERFORMANCE SUMMARY");
+    if (sp.sortCount == 0 && sp.searchCount == 0) {
+        std::cout << "  No operations recorded yet.\n";
+        return;
+    }
+    if (sp.sortCount > 0) {
+        std::cout << "\n  -- Sorting Results --\n";
+        printPerfTable(const_cast<PerfRecord*>(sp.sorts), sp.sortCount);
+    }
+    if (sp.searchCount > 0) {
+        std::cout << "\n  -- Search Results --\n";
+        printSearchPerfTable(const_cast<SearchPerfRecord*>(sp.searches), sp.searchCount);
+    }
+}
+
+// =============================================================
+//  SORT SUB-MENUS
+// =============================================================
+static void doSortArray(ResidentArray& arr, SessionPerf& sp) {
+    std::size_t mem = sizeof(Resident) * arr.count;
+    const int SHOW = 20;
+    while (true) {
+        menuTitle("  SORTING — Array");
+        std::cout << "  1. Bubble Sort    (by Age, ascending)\n";
+        std::cout << "  2. Selection Sort (by Daily Distance, ascending)\n";
+        std::cout << "  3. Insertion Sort (by Monthly Emission, descending)\n";
+        std::cout << "  4. Run All Three\n";
+        std::cout << "  0. Back\n";
+        int ch = readInt("  Choice: ");
+        if (ch == 0) break;
+        if (ch < 1 || ch > 4) { std::cout << "  Invalid choice.\n"; continue; }
+
+        auto run = [&](int which) {
+            ResidentArray copy;
+            for (int i = 0; i < arr.count; ++i) copy.data[i] = arr.data[i];
+            copy.count = arr.count;
+
+            std::string algo;
+            auto t0 = std::chrono::high_resolution_clock::now();
+            if (which == 1) { bubbleSortArray(copy);    algo = "Bubble Sort (Age)"; }
+            if (which == 2) { selectionSortArray(copy); algo = "Selection Sort (Dist)"; }
+            if (which == 3) { insertionSortArray(copy); algo = "Insertion Sort (CO2)"; }
+            auto t1 = std::chrono::high_resolution_clock::now();
+            long long us = std::chrono::duration_cast<std::chrono::microseconds>(t1-t0).count();
+
+            menuLine('-');
+            std::cout << "  " << algo << "  [Array]\n";
+            std::cout << "  Time: " << us << " us   |   Memory: " << mem << " bytes\n";
+            menuLine('-');
+            printSortedArray(copy, SHOW);
+            sp.addSort(algo, "Array", us, mem);
+        };
+
+        if (ch == 4) { run(1); run(2); run(3); }
+        else          run(ch);
+    }
+}
+
+static void doSortList(LinkedList& list, SessionPerf& sp) {
+    std::size_t mem = sizeof(Resident) * list.size;
+    const int SHOW = 20;
+    while (true) {
+        menuTitle("  SORTING — Linked List");
+        std::cout << "  1. Bubble Sort    (by Age, ascending)\n";
+        std::cout << "  2. Selection Sort (by Daily Distance, ascending)\n";
+        std::cout << "  3. Insertion Sort (by Monthly Emission, descending)\n";
+        std::cout << "  4. Run All Three\n";
+        std::cout << "  0. Back\n";
+        int ch = readInt("  Choice: ");
+        if (ch == 0) break;
+        if (ch < 1 || ch > 4) { std::cout << "  Invalid choice.\n"; continue; }
+
+        auto run = [&](int which) {
+            LinkedList copy;
+            copy.copyFrom(list);
+
+            std::string algo;
+            auto t0 = std::chrono::high_resolution_clock::now();
+            if (which == 1) { bubbleSortList(copy);    algo = "Bubble Sort (Age)"; }
+            if (which == 2) { selectionSortList(copy); algo = "Selection Sort (Dist)"; }
+            if (which == 3) { insertionSortList(copy); algo = "Insertion Sort (CO2)"; }
+            auto t1 = std::chrono::high_resolution_clock::now();
+            long long us = std::chrono::duration_cast<std::chrono::microseconds>(t1-t0).count();
+
+            menuLine('-');
+            std::cout << "  " << algo << "  [Linked List]\n";
+            std::cout << "  Time: " << us << " us   |   Memory: " << mem << " bytes\n";
+            menuLine('-');
+            printSortedList(copy, SHOW);
+            sp.addSort(algo, "Linked List", us, mem);
+        };
+
+        if (ch == 4) { run(1); run(2); run(3); }
+        else          run(ch);
+    }
+}
+
+// =============================================================
+//  SEARCH SUB-MENUS
+// =============================================================
+
+// Helper: build sorted array copy for binary search
+static void makeSortedArrayCopy(const ResidentArray& src, ResidentArray& dst) {
+    for (int i = 0; i < src.count; ++i) dst.data[i] = src.data[i];
+    dst.count = src.count;
+    bubbleSortArray(dst);
+}
+
+static void doSearchArray(const ResidentArray& arr, SessionPerf& sp) {
+    while (true) {
+        menuTitle("  SEARCHING — Array");
+        std::cout << "  1. Linear Search  — by Age Group (enter range)\n";
+        std::cout << "  2. Linear Search  — by Mode of Transport\n";
+        std::cout << "  3. Linear Search  — by Daily Distance above threshold\n";
+        std::cout << "  4. Binary Search  — by Age Range (sorted copy)\n";
+        std::cout << "  5. Run All (defaults: age 26-45, mode Car, dist>15)\n";
+        std::cout << "  0. Back\n";
+        int ch = readInt("  Choice: ");
+        if (ch == 0) break;
+        if (ch < 1 || ch > 5) { std::cout << "  Invalid choice.\n"; continue; }
+
+        if (ch == 1 || ch == 5) {
+            int lo = 26, hi = 45;
+            if (ch == 1) {
+                lo = readInt("  Age range — lower bound: ");
+                hi = readInt("  Age range — upper bound: ");
+            }
+            auto t0 = std::chrono::high_resolution_clock::now();
+            ResultSet rs = linearSearchAgeRange(arr, lo, hi);
+            auto t1 = std::chrono::high_resolution_clock::now();
+            long long us = std::chrono::duration_cast<std::chrono::microseconds>(t1-t0).count();
+            std::string crit = "Age " + std::to_string(lo) + "-" + std::to_string(hi);
+            std::cout << "\n  Linear Search | " << crit << " | Array\n";
+            std::cout << "  Found: " << rs.count << " records  |  Time: " << us << " us\n";
+            printResultSet(rs);
+            sp.addSearch("Linear", "Array", crit, rs.count, us);
+        }
+        if (ch == 2 || ch == 5) {
+            std::string mode = "Car";
+            if (ch == 2) mode = readLine("  Mode of transport: ");
+            auto t0 = std::chrono::high_resolution_clock::now();
+            ResultSet rs = linearSearchMode(arr, mode);
+            auto t1 = std::chrono::high_resolution_clock::now();
+            long long us = std::chrono::duration_cast<std::chrono::microseconds>(t1-t0).count();
+            std::string crit = "Mode = " + mode;
+            std::cout << "\n  Linear Search | " << crit << " | Array\n";
+            std::cout << "  Found: " << rs.count << " records  |  Time: " << us << " us\n";
+            printResultSet(rs);
+            sp.addSearch("Linear", "Array", crit, rs.count, us);
+        }
+        if (ch == 3 || ch == 5) {
+            double thr = 15.0;
+            if (ch == 3) thr = readDouble("  Distance threshold (records above X km): ");
+            auto t0 = std::chrono::high_resolution_clock::now();
+            ResultSet rs = linearSearchDistance(arr, thr);
+            auto t1 = std::chrono::high_resolution_clock::now();
+            long long us = std::chrono::duration_cast<std::chrono::microseconds>(t1-t0).count();
+            std::string crit = "Distance > " + std::to_string((int)thr) + " km";
+            std::cout << "\n  Linear Search | " << crit << " | Array\n";
+            std::cout << "  Found: " << rs.count << " records  |  Time: " << us << " us\n";
+            printResultSet(rs);
+            sp.addSearch("Linear", "Array", crit, rs.count, us);
+        }
+        if (ch == 4 || ch == 5) {
+            int lo = 26, hi = 45;
+            if (ch == 4) {
+                lo = readInt("  Age range — lower bound: ");
+                hi = readInt("  Age range — upper bound: ");
+            }
+            std::cout << "  (Sorting array copy by age for binary search...)\n";
+            ResidentArray sorted;
+            makeSortedArrayCopy(arr, sorted);
+            auto t0 = std::chrono::high_resolution_clock::now();
+            ResultSet rs = binarySearchAgeRange(sorted, lo, hi);
+            auto t1 = std::chrono::high_resolution_clock::now();
+            long long us = std::chrono::duration_cast<std::chrono::microseconds>(t1-t0).count();
+            std::string crit = "Age " + std::to_string(lo) + "-" + std::to_string(hi);
+            std::cout << "\n  Binary Search | " << crit << " (sorted) | Array\n";
+            std::cout << "  Found: " << rs.count << " records  |  Time: " << us << " us\n";
+            printResultSet(rs);
+            sp.addSearch("Binary", "Array (sorted)", crit, rs.count, us);
+        }
+    }
+}
+
+static void doSearchList(const LinkedList& list, SessionPerf& sp) {
+    while (true) {
+        menuTitle("  SEARCHING — Linked List");
+        std::cout << "  1. Linear Search  — by Age Group (enter range)\n";
+        std::cout << "  2. Linear Search  — by Mode of Transport\n";
+        std::cout << "  3. Linear Search  — by Daily Distance above threshold\n";
+        std::cout << "  4. Binary Search  — by Age Range (sorted copy)\n";
+        std::cout << "  5. Run All (defaults: age 26-45, mode Car, dist>15)\n";
+        std::cout << "  0. Back\n";
+        int ch = readInt("  Choice: ");
+        if (ch == 0) break;
+        if (ch < 1 || ch > 5) { std::cout << "  Invalid choice.\n"; continue; }
+
+        if (ch == 1 || ch == 5) {
+            int lo = 26, hi = 45;
+            if (ch == 1) {
+                lo = readInt("  Age range — lower bound: ");
+                hi = readInt("  Age range — upper bound: ");
+            }
+            auto t0 = std::chrono::high_resolution_clock::now();
+            ResultSet rs = linearSearchAgeRange(list, lo, hi);
+            auto t1 = std::chrono::high_resolution_clock::now();
+            long long us = std::chrono::duration_cast<std::chrono::microseconds>(t1-t0).count();
+            std::string crit = "Age " + std::to_string(lo) + "-" + std::to_string(hi);
+            std::cout << "\n  Linear Search | " << crit << " | Linked List\n";
+            std::cout << "  Found: " << rs.count << " records  |  Time: " << us << " us\n";
+            printResultSet(rs);
+            sp.addSearch("Linear", "Linked List", crit, rs.count, us);
+        }
+        if (ch == 2 || ch == 5) {
+            std::string mode = "Car";
+            if (ch == 2) mode = readLine("  Mode of transport: ");
+            auto t0 = std::chrono::high_resolution_clock::now();
+            ResultSet rs = linearSearchMode(list, mode);
+            auto t1 = std::chrono::high_resolution_clock::now();
+            long long us = std::chrono::duration_cast<std::chrono::microseconds>(t1-t0).count();
+            std::string crit = "Mode = " + mode;
+            std::cout << "\n  Linear Search | " << crit << " | Linked List\n";
+            std::cout << "  Found: " << rs.count << " records  |  Time: " << us << " us\n";
+            printResultSet(rs);
+            sp.addSearch("Linear", "Linked List", crit, rs.count, us);
+        }
+        if (ch == 3 || ch == 5) {
+            double thr = 15.0;
+            if (ch == 3) thr = readDouble("  Distance threshold (records above X km): ");
+            auto t0 = std::chrono::high_resolution_clock::now();
+            ResultSet rs = linearSearchDistance(list, thr);
+            auto t1 = std::chrono::high_resolution_clock::now();
+            long long us = std::chrono::duration_cast<std::chrono::microseconds>(t1-t0).count();
+            std::string crit = "Distance > " + std::to_string((int)thr) + " km";
+            std::cout << "\n  Linear Search | " << crit << " | Linked List\n";
+            std::cout << "  Found: " << rs.count << " records  |  Time: " << us << " us\n";
+            printResultSet(rs);
+            sp.addSearch("Linear", "Linked List", crit, rs.count, us);
+        }
+        if (ch == 4 || ch == 5) {
+            int lo = 26, hi = 45;
+            if (ch == 4) {
+                lo = readInt("  Age range — lower bound: ");
+                hi = readInt("  Age range — upper bound: ");
+            }
+            std::cout << "  (Sorting list copy by age for binary search...)\n";
+            LinkedList sorted;
+            sorted.copyFrom(list);
+            bubbleSortList(sorted);
+            auto t0 = std::chrono::high_resolution_clock::now();
+            ResultSet rs = binarySearchAgeRange(sorted, lo, hi);
+            auto t1 = std::chrono::high_resolution_clock::now();
+            long long us = std::chrono::duration_cast<std::chrono::microseconds>(t1-t0).count();
+            std::string crit = "Age " + std::to_string(lo) + "-" + std::to_string(hi);
+            std::cout << "\n  Binary Search | " << crit << " (sorted) | Linked List\n";
+            std::cout << "  Found: " << rs.count << " records  |  Time: " << us << " us\n";
+            printResultSet(rs);
+            sp.addSearch("Binary", "List (sorted)", crit, rs.count, us);
+        }
+    }
+}
+
+// =============================================================
+//  INSIGHTS & RECOMMENDATIONS
+// =============================================================
+
+struct InsightData {
+    // per age group
+    double groupEmission[NUM_GROUPS];
+    int    groupCount[NUM_GROUPS];
+    int    groupBicycleCount[NUM_GROUPS];
+    int    groupCarCount[NUM_GROUPS];
+    int    groupWalkCount[NUM_GROUPS];
+    // per city (index 0=CityA, 1=CityB, 2=CityC)
+    double cityEmission[NUM_CITIES];
+    int    cityCount[NUM_CITIES];
+    // global
+    double grandTotal;
+    int    totalCount;
+
+    InsightData() : grandTotal(0.0), totalCount(0) {
+        for (int i = 0; i < NUM_GROUPS; ++i) {
+            groupEmission[i] = 0.0;
+            groupCount[i] = groupBicycleCount[i] = groupCarCount[i] = groupWalkCount[i] = 0;
+        }
+        for (int i = 0; i < NUM_CITIES; ++i) {
+            cityEmission[i] = 0.0;
+            cityCount[i] = 0;
+        }
+    }
+
+    void record(const Resident& r) {
+        int gi = ageGroupIndex(r.age);
+        if (gi >= 0) {
+            groupEmission[gi] += r.monthlyEmission;
+            ++groupCount[gi];
+            if (r.modeOfTransport == "Bicycle") ++groupBicycleCount[gi];
+            if (r.modeOfTransport == "Car")     ++groupCarCount[gi];
+            if (r.modeOfTransport == "Walking") ++groupWalkCount[gi];
+        }
+        // city index
+        const std::string cNames[NUM_CITIES] = {"CityA", "CityB", "CityC"};
+        for (int c = 0; c < NUM_CITIES; ++c) {
+            if (r.cityLabel == cNames[c]) {
+                cityEmission[c] += r.monthlyEmission;
+                ++cityCount[c];
+                break;
+            }
+        }
+        grandTotal += r.monthlyEmission;
+        ++totalCount;
+    }
+};
+
+static InsightData buildInsights(const ResidentArray& arr) {
+    InsightData d;
+    for (int i = 0; i < arr.count; ++i) d.record(arr.data[i]);
+    return d;
+}
+
+static InsightData buildInsights(const LinkedList& list) {
+    InsightData d;
+    const Node* cur = list.head;
+    while (cur) { d.record(cur->resident); cur = cur->next; }
+    return d;
+}
+
+static void printInsights(const InsightData& d, const std::string& ds) {
+    const std::string cNames[NUM_CITIES] = {"CityA", "CityB", "CityC"};
+
+    // ── Derive findings ───────────────────────────────────────
+    // 1. Highest-emission age group
+    int topGroup = 0;
+    for (int i = 1; i < NUM_GROUPS; ++i)
+        if (d.groupEmission[i] > d.groupEmission[topGroup]) topGroup = i;
+
+    // 2. Age group with highest bicycle preference (bike% among all residents in group)
+    int topBikeGroup = 0;
+    double topBikePct = 0.0;
+    for (int i = 0; i < NUM_GROUPS; ++i) {
+        if (d.groupCount[i] == 0) continue;
+        double pct = 100.0 * d.groupBicycleCount[i] / d.groupCount[i];
+        if (pct > topBikePct) { topBikePct = pct; topBikeGroup = i; }
+    }
+
+    // 3. Age group most dependent on cars (highest car%)
+    int topCarGroup = 0;
+    double topCarPct = 0.0;
+    for (int i = 0; i < NUM_GROUPS; ++i) {
+        if (d.groupCount[i] == 0) continue;
+        double pct = 100.0 * d.groupCarCount[i] / d.groupCount[i];
+        if (pct > topCarPct) { topCarPct = pct; topCarGroup = i; }
+    }
+
+    // 4. Highest-emission city
+    int topCity = 0;
+    for (int c = 1; c < NUM_CITIES; ++c)
+        if (d.cityEmission[c] > d.cityEmission[topCity]) topCity = c;
+
+    // 5. Age group with highest walking proportion
+    int topWalkGroup = 0;
+    double topWalkPct = 0.0;
+    for (int i = 0; i < NUM_GROUPS; ++i) {
+        if (d.groupCount[i] == 0) continue;
+        double pct = 100.0 * d.groupWalkCount[i] / d.groupCount[i];
+        if (pct > topWalkPct) { topWalkPct = pct; topWalkGroup = i; }
+    }
+
+    // ── Print ─────────────────────────────────────────────────
+    std::cout << "\n";
+    menuLine('=', 64);
+    std::cout << "  INSIGHTS & RECOMMENDATIONS  [" << ds << "]\n";
+    menuLine('=', 64);
+
+    // Finding 1 — age group emissions
+    std::cout << "\n  FINDING 1 — Age Group with Highest Total Emissions\n";
+    menuLine('-', 64);
+    std::cout << "  +-" << std::string(42,'-') << "-+-" << std::string(16,'-') << "-+-" << std::string(7,'-') << "-+\n";
+    std::cout << "  | " << std::left  << std::setw(42) << "Age Group"
+              << " | " << std::right << std::setw(16) << "Total CO2 (kg)"
+              << " | " << std::right << std::setw(7)  << "Count"
+              << " |\n";
+    std::cout << "  +-" << std::string(42,'-') << "-+-" << std::string(16,'-') << "-+-" << std::string(7,'-') << "-+\n";
+    for (int i = 0; i < NUM_GROUPS; ++i) {
+        std::string label = AGE_GROUP_LABELS[i];
+        if (i == topGroup) label += " ***";
+        std::cout << "  | " << std::left  << std::setw(42) << label
+                  << " | " << std::right << std::setw(16) << std::fixed << std::setprecision(2) << d.groupEmission[i]
+                  << " | " << std::right << std::setw(7)  << d.groupCount[i]
+                  << " |\n";
+    }
+    std::cout << "  +-" << std::string(42,'-') << "-+-" << std::string(16,'-') << "-+-" << std::string(7,'-') << "-+\n";
+    std::cout << "  >> " << AGE_GROUP_LABELS[topGroup] << " produces the highest total CO2: "
+              << std::fixed << std::setprecision(2) << d.groupEmission[topGroup] << " kg/month ("
+              << std::setprecision(1) << (d.grandTotal > 0 ? 100.0*d.groupEmission[topGroup]/d.grandTotal : 0)
+              << "% of all emissions).\n";
+
+    // Finding 2 — bicycle vs car by age group
+    std::cout << "\n  FINDING 2 — Bicycle vs Car Usage by Age Group\n";
+    menuLine('-', 64);
+    std::cout << "  +-" << std::string(42,'-') << "-+-" << std::string(8,'-') << "-+-" << std::string(8,'-') << "-+-" << std::string(9,'-') << "-+-" << std::string(9,'-') << "-+\n";
+    std::cout << "  | " << std::left  << std::setw(42) << "Age Group"
+              << " | " << std::right << std::setw(8)  << "Bike %"
+              << " | " << std::right << std::setw(8)  << "Car %"
+              << " | " << std::right << std::setw(9)  << "Bikes"
+              << " | " << std::right << std::setw(9)  << "Cars"
+              << " |\n";
+    std::cout << "  +-" << std::string(42,'-') << "-+-" << std::string(8,'-') << "-+-" << std::string(8,'-') << "-+-" << std::string(9,'-') << "-+-" << std::string(9,'-') << "-+\n";
+    for (int i = 0; i < NUM_GROUPS; ++i) {
+        if (d.groupCount[i] == 0) continue;
+        double bpct = 100.0 * d.groupBicycleCount[i] / d.groupCount[i];
+        double cpct = 100.0 * d.groupCarCount[i]     / d.groupCount[i];
+        std::string label = AGE_GROUP_LABELS[i];
+        if (i == topBikeGroup) label += " (top bike)";
+        if (i == topCarGroup)  label += " (top car)";
+        std::cout << "  | " << std::left  << std::setw(42) << label
+                  << " | " << std::right << std::setw(7) << std::fixed << std::setprecision(1) << bpct << "%"
+                  << " | " << std::right << std::setw(7) << std::fixed << std::setprecision(1) << cpct << "%"
+                  << " | " << std::right << std::setw(9) << d.groupBicycleCount[i]
+                  << " | " << std::right << std::setw(9) << d.groupCarCount[i]
+                  << " |\n";
+    }
+    std::cout << "  +-" << std::string(42,'-') << "-+-" << std::string(8,'-') << "-+-" << std::string(8,'-') << "-+-" << std::string(9,'-') << "-+-" << std::string(9,'-') << "-+\n";
+    std::cout << "  >> Highest bicycle use: " << AGE_GROUP_LABELS[topBikeGroup]
+              << " (" << std::fixed << std::setprecision(1) << topBikePct << "% ride bikes).\n";
+    std::cout << "  >> Highest car dependency: " << AGE_GROUP_LABELS[topCarGroup]
+              << " (" << std::fixed << std::setprecision(1) << topCarPct << "% drive).\n";
+
+    // Finding 3 — city emissions
+    std::cout << "\n  FINDING 3 — City with Highest Total Emissions\n";
+    menuLine('-', 64);
+    std::cout << "  +-" << std::string(8,'-') << "-+-" << std::string(10,'-') << "-+-" << std::string(16,'-') << "-+-" << std::string(16,'-') << "-+-" << std::string(9,'-') << "-+\n";
+    std::cout << "  | " << std::left  << std::setw(8)  << "City"
+              << " | " << std::right << std::setw(10) << "Residents"
+              << " | " << std::right << std::setw(16) << "Total CO2 (kg)"
+              << " | " << std::right << std::setw(16) << "Avg CO2/person"
+              << " | " << std::right << std::setw(9)  << "% Total"
+              << " |\n";
+    std::cout << "  +-" << std::string(8,'-') << "-+-" << std::string(10,'-') << "-+-" << std::string(16,'-') << "-+-" << std::string(16,'-') << "-+-" << std::string(9,'-') << "-+\n";
+    for (int c = 0; c < NUM_CITIES; ++c) {
+        double avg = d.cityCount[c] > 0 ? d.cityEmission[c]/d.cityCount[c] : 0.0;
+        double pct = d.grandTotal > 0 ? 100.0*d.cityEmission[c]/d.grandTotal : 0.0;
+        std::string label = cNames[c];
+        if (c == topCity) label += " ***";
+        std::cout << "  | " << std::left  << std::setw(8)  << label
+                  << " | " << std::right << std::setw(10) << d.cityCount[c]
+                  << " | " << std::right << std::setw(16) << std::fixed << std::setprecision(2) << d.cityEmission[c]
+                  << " | " << std::right << std::setw(16) << std::fixed << std::setprecision(2) << avg
+                  << " | " << std::right << std::setw(8)  << std::fixed << std::setprecision(1) << pct << "%"
+                  << " |\n";
+    }
+    std::cout << "  +-" << std::string(8,'-') << "-+-" << std::string(10,'-') << "-+-" << std::string(16,'-') << "-+-" << std::string(16,'-') << "-+-" << std::string(9,'-') << "-+\n";
+    std::cout << "  >> " << cNames[topCity] << " has the highest total emissions: "
+              << std::fixed << std::setprecision(2) << d.cityEmission[topCity] << " kg CO2/month.\n";
+
+    // ── Recommendations ───────────────────────────────────────
+    std::cout << "\n";
+    menuLine('=', 64);
+    std::cout << "  RECOMMENDATIONS FOR CITY PLANNERS\n";
+    menuLine('=', 64);
+
+    // Rec 1 — target the high-emission age group
+    std::cout << "\n  [1] Target Subsidised Public Transport for "
+              << AGE_GROUP_LABELS[topCarGroup] << "\n";
+    menuLine('-', 64);
+    std::cout << "  This group drives the most (" << std::fixed << std::setprecision(1)
+              << topCarPct << "% car users) and generates the bulk of\n"
+              << "  transport-related CO2. Offering subsidised bus or carpool passes\n"
+              << "  to working-age residents aged 26-60 could reduce total city\n"
+              << "  emissions significantly.\n";
+
+    // Rec 2 — leverage existing bike culture
+    std::cout << "\n  [2] Expand Cycling Infrastructure for "
+              << AGE_GROUP_LABELS[topBikeGroup] << "\n";
+    menuLine('-', 64);
+    std::cout << "  " << std::fixed << std::setprecision(1) << topBikePct
+              << "% of this group already cycle. Protected bike lanes, secure\n"
+              << "  parking, and bike-sharing schemes would reinforce this low-carbon\n"
+              << "  behaviour and encourage neighbouring age groups to adopt it.\n";
+
+    // Rec 3 — focus on the highest-emission city
+    std::cout << "\n  [3] Prioritise Emission Reduction in " << cNames[topCity] << "\n";
+    menuLine('-', 64);
+    double topCityAvg = d.cityCount[topCity] > 0
+                      ? d.cityEmission[topCity]/d.cityCount[topCity] : 0.0;
+    std::cout << "  " << cNames[topCity] << " accounts for "
+              << std::setprecision(1) << (d.grandTotal>0 ? 100.0*d.cityEmission[topCity]/d.grandTotal : 0.0)
+              << "% of combined emissions (avg "
+              << std::setprecision(2) << topCityAvg << " kg CO2/person/month).\n"
+              << "  High-frequency, low-cost public transit routes and park-and-ride\n"
+              << "  facilities in this city should be the first capital investment.\n";
+
+    // Rec 4 — carpooling incentives
+    std::cout << "\n  [4] Institutionalise Employer-Led Carpooling Schemes\n";
+    menuLine('-', 64);
+    std::cout << "  Carpool trips emit 50-80% less CO2 per person than solo car trips.\n"
+              << "  City councils can mandate or incentivise employers with >50 staff\n"
+              << "  to operate shared-ride programmes, directly targeting the dominant\n"
+              << "  working-adult commuter population.\n";
+
+    // Rec 5 — walking-friendly urban design
+    std::cout << "\n  [5] Promote 15-Minute Neighbourhood Design for Short Trips\n";
+    menuLine('-', 64);
+    std::cout << "  " << std::fixed << std::setprecision(1) << topWalkPct
+              << "% of " << AGE_GROUP_LABELS[topWalkGroup] << " already walk.\n"
+              << "  Rezoning residential areas to place workplaces, schools, and\n"
+              << "  shops within 2-3 km eliminates the need for motorised transport\n"
+              << "  for short trips, yielding zero-emission journeys at no ongoing cost.\n";
+
+    menuLine('=', 64);
+    std::cout << "\n";
+}
+
+// ── Wrappers callable from menu ───────────────────────────────
+static void showInsights(const ResidentArray& arr) {
+    InsightData d = buildInsights(arr);
+    printInsights(d, "Fixed-Size Array");
+}
+static void showInsights(const LinkedList& list) {
+    InsightData d = buildInsights(list);
+    printInsights(d, "Singly Linked List");
+}
+
+// =============================================================
+//  ARRAY SUB-MENU
+// =============================================================
+static void menuArray(ResidentArray& arr, LinkedList& list,
+                      bool& loaded, SessionPerf& sp) {
     const std::string FILES[3] = {
         "datasets/dataset1-cityA.csv",
         "datasets/dataset2-cityB.csv",
@@ -1213,41 +1822,192 @@ int main() {
     };
     const std::string CITIES[3] = { "CityA", "CityB", "CityC" };
 
-    // ── Load data ────────────────────────────────────────────
+    while (true) {
+        menuTitle("  ARRAY-BASED PROGRAM");
+        if (loaded) std::cout << "  Data loaded: " << arr.count << " residents\n";
+        else        std::cout << "  Data not loaded yet\n";
+        menuLine('-');
+        std::cout << "  1. Load Data from CSV Files\n";
+        std::cout << "  2. Carbon Emission Analysis\n";
+        std::cout << "     (2a) By Age Group   (2b) By City\n";
+        std::cout << "  3. Sorting Experiments\n";
+        std::cout << "  4. Searching Experiments\n";
+        std::cout << "  5. Performance Summary\n";
+        std::cout << "  6. Insights & Recommendations\n";
+        std::cout << "  0. Back to Main Menu\n";
+        menuLine('-');
+        int ch = readInt("  Choice: ");
+
+        switch (ch) {
+        case 0:
+            return;
+
+        case 1:
+            arr.count = 0;
+            for (int i = 0; i < 3; ++i) loadCSV(arr, FILES[i], CITIES[i]);
+            // also reload list so binary search / copy operations stay consistent
+            { Node* c = list.head; while (c) { Node* t = c->next; delete c; c = t; } list.head = nullptr; list.size = 0; }
+            for (int i = 0; i < 3; ++i) loadCSV(list, FILES[i], CITIES[i]);
+            loaded = true;
+            menuLine('-');
+            std::cout << "  Loaded " << arr.count << " residents into Array.\n";
+            std::cout << "  Loaded " << list.size << " residents into Linked List.\n";
+            menuLine('-');
+            printDataPreview(arr);
+            break;
+
+        case 2: {
+            if (!loaded) { std::cout << "  Please load data first (Option 1).\n"; break; }
+            menuTitle("  CARBON EMISSION ANALYSIS — Array");
+            std::cout << "  a. By Age Group\n";
+            std::cout << "  b. By City\n";
+            std::cout << "  c. Both\n";
+            std::cout << "  0. Back\n";
+            int sub = readInt("  Choice: ");
+            if (sub == 1 || sub == 3) analyseByAgeGroup(arr);
+            if (sub == 2 || sub == 3) analyseByCity(arr);
+            if (sub != 0 && sub != 1 && sub != 2 && sub != 3)
+                std::cout << "  Invalid choice.\n";
+            break;
+        }
+
+        case 3:
+            if (!loaded) { std::cout << "  Please load data first (Option 1).\n"; break; }
+            doSortArray(arr, sp);
+            break;
+
+        case 4:
+            if (!loaded) { std::cout << "  Please load data first (Option 1).\n"; break; }
+            doSearchArray(arr, sp);
+            break;
+
+        case 5:
+            showPerfSummary(sp);
+            break;
+
+        case 6:
+            if (!loaded) { std::cout << "  Please load data first (Option 1).\n"; break; }
+            showInsights(arr);
+            break;
+
+        default:
+            std::cout << "  Invalid choice.\n";
+        }
+    }
+}
+
+// =============================================================
+//  LINKED LIST SUB-MENU
+// =============================================================
+static void menuList(ResidentArray& arr, LinkedList& list,
+                     bool& loaded, SessionPerf& sp) {
+    const std::string FILES[3] = {
+        "datasets/dataset1-cityA.csv",
+        "datasets/dataset2-cityB.csv",
+        "datasets/dataset3-cityC.csv"
+    };
+    const std::string CITIES[3] = { "CityA", "CityB", "CityC" };
+
+    while (true) {
+        menuTitle("  LINKED LIST-BASED PROGRAM");
+        if (loaded) std::cout << "  Data loaded: " << list.size << " residents\n";
+        else        std::cout << "  Data not loaded yet\n";
+        menuLine('-');
+        std::cout << "  1. Load Data from CSV Files\n";
+        std::cout << "  2. Carbon Emission Analysis\n";
+        std::cout << "     (2a) By Age Group   (2b) By City\n";
+        std::cout << "  3. Sorting Experiments\n";
+        std::cout << "  4. Searching Experiments\n";
+        std::cout << "  5. Performance Summary\n";
+        std::cout << "  6. Insights & Recommendations\n";
+        std::cout << "  0. Back to Main Menu\n";
+        menuLine('-');
+        int ch = readInt("  Choice: ");
+
+        switch (ch) {
+        case 0:
+            return;
+
+        case 1:
+            arr.count = 0;
+            { Node* c = list.head; while (c) { Node* t = c->next; delete c; c = t; } list.head = nullptr; list.size = 0; }
+            for (int i = 0; i < 3; ++i) loadCSV(arr, FILES[i], CITIES[i]);
+            for (int i = 0; i < 3; ++i) loadCSV(list, FILES[i], CITIES[i]);
+            loaded = true;
+            menuLine('-');
+            std::cout << "  Loaded " << arr.count << " residents into Array.\n";
+            std::cout << "  Loaded " << list.size << " residents into Linked List.\n";
+            menuLine('-');
+            printDataPreview(list);
+            break;
+
+        case 2: {
+            if (!loaded) { std::cout << "  Please load data first (Option 1).\n"; break; }
+            menuTitle("  CARBON EMISSION ANALYSIS — Linked List");
+            std::cout << "  1. By Age Group\n";
+            std::cout << "  2. By City\n";
+            std::cout << "  3. Both\n";
+            std::cout << "  0. Back\n";
+            int sub = readInt("  Choice: ");
+            if (sub == 1 || sub == 3) analyseByAgeGroup(list);
+            if (sub == 2 || sub == 3) analyseByCity(list);
+            if (sub != 0 && sub != 1 && sub != 2 && sub != 3)
+                std::cout << "  Invalid choice.\n";
+            break;
+        }
+
+        case 3:
+            if (!loaded) { std::cout << "  Please load data first (Option 1).\n"; break; }
+            doSortList(list, sp);
+            break;
+
+        case 4:
+            if (!loaded) { std::cout << "  Please load data first (Option 1).\n"; break; }
+            doSearchList(list, sp);
+            break;
+
+        case 5:
+            showPerfSummary(sp);
+            break;
+
+        case 6:
+            if (!loaded) { std::cout << "  Please load data first (Option 1).\n"; break; }
+            showInsights(list);
+            break;
+
+        default:
+            std::cout << "  Invalid choice.\n";
+        }
+    }
+}
+
+// =============================================================
+//  main
+// =============================================================
+int main() {
     ResidentArray arr;
-    for (int i = 0; i < 3; ++i) loadCSV(arr, FILES[i], CITIES[i]);
+    LinkedList    list;
+    bool          loaded = false;
+    SessionPerf   sp;
 
-    LinkedList list;
-    for (int i = 0; i < 3; ++i) loadCSV(list, FILES[i], CITIES[i]);
+    while (true) {
+        std::cout << "\n";
+        menuLine('=', 60);
+        std::cout << "    DSTR Assignment — Carbon Emission Analyser\n";
+        menuLine('=', 60);
+        std::cout << "  1. Array-based Program\n";
+        std::cout << "  2. Linked List-based Program\n";
+        std::cout << "  0. Exit\n";
+        menuLine('-', 60);
+        int ch = readInt("  Choice: ");
 
-    // ── Quick load summary ───────────────────────────────────
-    std::cout << "========================================\n";
-    std::cout << " Resident Data Loaded\n";
-    std::cout << "========================================\n";
-    std::cout << "Array      : " << arr.count  << " residents\n";
-    std::cout << "LinkedList : " << list.size  << " residents\n\n";
-
-    std::cout << "--- First 5 records (array) ---\n";
-    for (int i = 0; i < 5 && i < arr.count; ++i)
-        printResident(arr.data[i]);
-
-    std::cout << "\n--- Last 5 records (array) ---\n";
-    int s = arr.count - 5 < 0 ? 0 : arr.count - 5;
-    for (int i = s; i < arr.count; ++i)
-        printResident(arr.data[i]);
-
-    // ── Analysis ─────────────────────────────────────────────
-    analyseByAgeGroup(arr);
-    analyseByAgeGroup(list);
-
-    analyseByCity(arr);
-    analyseByCity(list);
-
-    // ── Sorting demo ─────────────────────────────────────────
-    runSortingDemo(arr, list);
-
-    // ── Search demo ──────────────────────────────────────────
-    runSearchDemo(arr, list);
-
+        if (ch == 0) {
+            std::cout << "  Goodbye.\n";
+            break;
+        }
+        if (ch == 1) { menuArray(arr, list, loaded, sp); continue; }
+        if (ch == 2) { menuList (arr, list, loaded, sp); continue; }
+        std::cout << "  Invalid choice. Please enter 0, 1, or 2.\n";
+    }
     return 0;
 }
