@@ -199,11 +199,18 @@ bool loadCSV(LinkedList&        list,
 }
 
 // ============================================================
-// SECTION 4: Age Group Categorisation and Analysis
+// SECTION 4 - Written by: Muhammad Sohaib Saim (TP085467)
+// This section handles all linked list analysis functions
+// and the main() function that runs the whole program.
+// The linked list version works differently from the array
+// because we cannot use index numbers. Instead I traverse
+// the list using a pointer starting from the head node.
 // ============================================================
-// ─────────────────────────────────────────────────────────────
-//  getAgeGroup — maps age to a descriptive label
-// ─────────────────────────────────────────────────────────────
+
+// This function analyses carbon emissions by age group
+// using the linked list. The logic is the same as the array
+// version but instead of a for loop with index I use a
+// while loop with a pointer to move through the nodes.
 std::string getAgeGroup(int age) {
     if (age >= 6  && age <= 17)  return "Children & Teenagers";
     if (age >= 18 && age <= 25)  return "University Students / Young Adults";
@@ -213,7 +220,7 @@ std::string getAgeGroup(int age) {
     return "Unknown";
 }
 
-// Returns 0-4 index for the 5 groups, -1 if outside defined ranges
+// convert age group code to min/max range
 static int ageGroupIndex(int age) {
     if (age >=  6 && age <= 17)  return 0;
     if (age >= 18 && age <= 25)  return 1;
@@ -223,9 +230,7 @@ static int ageGroupIndex(int age) {
     return -1;
 }
 
-// ─────────────────────────────────────────────────────────────
-//  Accumulators (no STL containers)
-// ─────────────────────────────────────────────────────────────
+// same stats struct as the array version
 const int MAX_MODES  = 12;
 const int NUM_GROUPS = 5;
 const int NUM_CITIES = 3;
@@ -296,9 +301,7 @@ struct CityData {
     }
 };
 
-// ─────────────────────────────────────────────────────────────
-//  Table printing helpers
-// ─────────────────────────────────────────────────────────────
+// print results table
 static const std::string AGE_GROUP_LABELS[NUM_GROUPS] = {
     "Children & Teenagers [6-17]",
     "University Students / Young Adults [18-25]",
@@ -340,7 +343,7 @@ static void printGroupTable(const GroupData& g) {
     }
     printTableSep();
 
-    // Most preferred mode (highest count)
+    // calculate average and find preferred mode for each group
     int bestIdx = 0;
     for (int i = 1; i < g.modeCount; ++i)
         if (g.modes[i].count > g.modes[bestIdx].count) bestIdx = i;
@@ -356,9 +359,8 @@ static void printGroupTable(const GroupData& g) {
               << avgPerResident << " kg CO2/month\n";
 }
 
-// ─────────────────────────────────────────────────────────────
-//  Core logic — shared between array and list versions
-// ─────────────────────────────────────────────────────────────
+// track transport modes per group using a 2D array
+// because we cannot use map or vector (no STL allowed)
 static void recordResident(GroupData groups[NUM_GROUPS], const Resident& r) {
     int idx = ageGroupIndex(r.age);
     if (idx >= 0) groups[idx].record(r.modeOfTransport, r.monthlyEmission);
@@ -369,14 +371,14 @@ static void recordResidentCity(CityData  cities[NUM_CITIES],
                                double&   grandTotal,
                                const Resident& r)
 {
-    // find city slot
+    // determine which age group this resident belongs to
     for (int c = 0; c < NUM_CITIES; ++c) {
         if (cities[c].city == r.cityLabel) {
             cities[c].record(r.modeOfTransport, r.monthlyEmission);
             break;
         }
     }
-    // global mode accumulator
+    // check if this mode already exists for this group
     for (int i = 0; i < allModeCount; ++i) {
         if (allModes[i].mode == r.modeOfTransport) {
             allModes[i].count++;
@@ -399,7 +401,9 @@ static void printCityAnalysis(CityData         cities[NUM_CITIES],
                                int              allModeCount,
                                double           grandTotal)
 {
-    // ── Per city ──────────────────────────────────────────────
+    // This function compares total carbon emissions across the 3 cities.
+    // I loop through the linked list and match each resident to their
+    // city using the cityLabel field, then accumulate emissions per city.
     std::cout << "\n  +-" << std::string(10,'-') << "-+-" << std::string(10,'-')
               << "-+-" << std::string(16,'-') << "-+-" << std::string(16,'-')
               << "-+-" << std::string(18,'-') << "-+\n";
@@ -432,7 +436,7 @@ static void printCityAnalysis(CityData         cities[NUM_CITIES],
               << "-+-" << std::string(16,'-') << "-+-" << std::string(16,'-')
               << "-+-" << std::string(18,'-') << "-+\n";
 
-    // ── Per city: top mode ────────────────────────────────────
+    // hardcode 3 cities since we know the datasets
     std::cout << "\n  Top transport mode by total emission per city:\n";
     for (int c = 0; c < NUM_CITIES; ++c) {
         if (cities[c].modeCount == 0) continue;
@@ -446,7 +450,7 @@ static void printCityAnalysis(CityData         cities[NUM_CITIES],
                   << cities[c].modes[best].totalEmission << " kg)\n";
     }
 
-    // ── Global: emission by transport mode ───────────────────
+    // traverse linked list and match each resident to their city
     std::cout << "\n  Emission by transport mode (all cities combined):\n";
     std::cout << "  +-" << std::string(30,'-') << "-+-" << std::string(10,'-')
               << "-+-" << std::string(16,'-') << "-+-" << std::string(18,'-') << "-+\n";
@@ -474,9 +478,9 @@ static void printCityAnalysis(CityData         cities[NUM_CITIES],
               << std::setprecision(2) << grandTotal << " kg/month\n";
 }
 
-// ─────────────────────────────────────────────────────────────
-//  analyseByAgeGroup — array version
-// ─────────────────────────────────────────────────────────────
+// Search linked list by age group with timing.
+// Same approach as the array version but using pointer traversal.
+// Linear search - O(n) time complexity.
 void analyseByAgeGroup(const ResidentArray& arr) {
     GroupData groups[NUM_GROUPS];
 
@@ -497,9 +501,9 @@ void analyseByAgeGroup(const ResidentArray& arr) {
     }
 }
 
-// ─────────────────────────────────────────────────────────────
-//  analyseByAgeGroup — linked list version
-// ─────────────────────────────────────────────────────────────
+// Search linked list by distance threshold with timing.
+// Finds all residents whose daily distance is greater than
+// the given threshold value.
 void analyseByAgeGroup(const LinkedList& list) {
     GroupData groups[NUM_GROUPS];
 
