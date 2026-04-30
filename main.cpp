@@ -30,16 +30,16 @@ ResidentArray copyArray(const ResidentArray& source) {
 // ============================================================
 void printExperimentHeader(const std::string& experimentName) {
     std::cout << "\n\n";
-    for (int i = 0; i < 80; i++) std::cout << "═";
+    for (int i = 0; i < 80; i++) std::cout << "=";
     std::cout << "\n";
     printCentered("EXPERIMENT: " + experimentName);
-    for (int i = 0; i < 80; i++) std::cout << "═";
+    for (int i = 0; i < 80; i++) std::cout << "=";
     std::cout << "\n\n";
 }
 
 void printSectionHeader(const std::string& section) {
     std::cout << "\n" << section << "\n";
-    for (int i = 0; i < (int)section.length(); i++) std::cout << "─";
+    for (int i = 0; i < (int)section.length(); i++) std::cout << "-";
     std::cout << "\n";
 }
 
@@ -49,9 +49,9 @@ void printSectionHeader(const std::string& section) {
 int main() {
     std::cout << std::fixed << std::setprecision(2);
     
-    printCentered("════════════════════════════════════════════════════════════════");
-    printCentered("      DSTR ASSIGNMENT - PERFORMANCE EXPERIMENT TEST BENCH");
-    printCentered("════════════════════════════════════════════════════════════════");
+    std::cout << std::string(80, '=') << "\n";
+    printCentered("DSTR ASSIGNMENT - PERFORMANCE EXPERIMENT TEST BENCH");
+    std::cout << std::string(80, '=') << "\n";
     
     // ============================================================
     // SECTION 1: LOAD DATA
@@ -545,10 +545,10 @@ int main() {
     // SUMMARY AND CONCLUSIONS
     // ═══════════════════════════════════════════════════════════
     std::cout << "\n\n";
-    for (int i = 0; i < 80; i++) std::cout << "═";
+    for (int i = 0; i < 80; i++) std::cout << "=";
     std::cout << "\n";
     printCentered("EXPERIMENT SUMMARY AND KEY INSIGHTS");
-    for (int i = 0; i < 80; i++) std::cout << "═";
+    for (int i = 0; i < 80; i++) std::cout << "=";
     std::cout << "\n\n";
     
     std::cout << "KEY FINDINGS:\n\n";
@@ -582,9 +582,11 @@ int main() {
     std::cout << "✓ Profile before optimizing - but always use efficient algorithms\n";
     std::cout << "✓ Consider hybrid approaches (e.g., Tim Sort) for real-world data\n\n";
     
-    std::cout << "════════════════════════════════════════════════════════════════════\n";
-    std::cout << "                    EXPERIMENTS COMPLETE\n";
-    std::cout << "════════════════════════════════════════════════════════════════════\n";
+    for (int i = 0; i < 80; i++) std::cout << "=";
+    std::cout << "\n";
+    printCentered("EXPERIMENTS COMPLETE");
+    for (int i = 0; i < 80; i++) std::cout << "=";
+    std::cout << "\n";
     
     return 0;
 }

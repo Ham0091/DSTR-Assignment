@@ -192,22 +192,26 @@ void printResident(const Resident& r) {
 // SECTION 4: printHorizontalLine Implementation
 // ============================================================
 // Print a horizontal line for table borders.
-// Adjusted width to match the printResident format.
+// Uses ASCII '=' characters for clean, cross-platform compatibility.
+// 80 character width matches standard terminal width.
 void printHorizontalLine() {
-    std::cout << std::string(120, '-') << std::endl;
+    std::cout << std::string(80, '=') << "\n";
 }
 
 // ============================================================
 // SECTION 5: printCentered Implementation
 // ============================================================
 // Center text in console output by adding padding.
-// Assumes console width of 80 characters (adjustable).
+// Uses only ASCII characters - no Unicode.
+// Standard console width: 80 characters.
+// Formula: padding = (80 - text.length()) / 2
 void printCentered(const std::string& text) {
-    const int consoleWidth = 100;
+    const int consoleWidth = 80;
     int padding = (consoleWidth - text.length()) / 2;
     
+    // Print padding spaces followed by the text
     if (padding > 0) {
         std::cout << std::string(padding, ' ');
     }
-    std::cout << text << std::endl;
+    std::cout << text << "\n";
 }
