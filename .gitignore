@@ -1,0 +1,9 @@
+# Compiled object files
+*.o
+
+# Executables
+*.exe
+
+# IDE folders
+.vscode/
+.claude/

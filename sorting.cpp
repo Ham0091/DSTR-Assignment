@@ -49,13 +49,16 @@ void swapResidents(Resident& a, Resident& b) {
 PerfMetrics sortArrayByAge(ResidentArray& arr) {
     auto start = std::chrono::high_resolution_clock::now();
     
-    // Bubble sort: compare adjacent elements, swap if out of order
+    // Bubble sort with early-exit: if no swaps in a full pass, data is sorted (O(n) best case)
     for (int i = 0; i < arr.count - 1; i++) {
+        bool swapped = false;
         for (int j = 0; j < arr.count - 1 - i; j++) {
             if (!compareByAge(arr.data[j], arr.data[j + 1])) {
                 swapResidents(arr.data[j], arr.data[j + 1]);
+                swapped = true;
             }
         }
+        if (!swapped) break;
     }
     
     auto end = std::chrono::high_resolution_clock::now();
@@ -71,13 +74,16 @@ PerfMetrics sortArrayByAge(ResidentArray& arr) {
 
 PerfMetrics sortArrayByDistance(ResidentArray& arr) {
     auto start = std::chrono::high_resolution_clock::now();
-    
+
     for (int i = 0; i < arr.count - 1; i++) {
+        bool swapped = false;
         for (int j = 0; j < arr.count - 1 - i; j++) {
             if (!compareByDistance(arr.data[j], arr.data[j + 1])) {
                 swapResidents(arr.data[j], arr.data[j + 1]);
+                swapped = true;
             }
         }
+        if (!swapped) break;
     }
     
     auto end = std::chrono::high_resolution_clock::now();
@@ -93,13 +99,16 @@ PerfMetrics sortArrayByDistance(ResidentArray& arr) {
 
 PerfMetrics sortArrayByEmission(ResidentArray& arr) {
     auto start = std::chrono::high_resolution_clock::now();
-    
+
     for (int i = 0; i < arr.count - 1; i++) {
+        bool swapped = false;
         for (int j = 0; j < arr.count - 1 - i; j++) {
             if (!compareByEmission(arr.data[j], arr.data[j + 1])) {
                 swapResidents(arr.data[j], arr.data[j + 1]);
+                swapped = true;
             }
         }
+        if (!swapped) break;
     }
     
     auto end = std::chrono::high_resolution_clock::now();
@@ -182,13 +191,16 @@ PerfMetrics sortArrayWithAlgorithm(ResidentArray& arr, int algorithm, int field)
     
     switch (algorithm) {
         case 1:
-            // Bubble sort
+            // Bubble sort with early-exit for O(n) best case on sorted data
             for (int i = 0; i < arr.count - 1; i++) {
+                bool swapped = false;
                 for (int j = 0; j < arr.count - 1 - i; j++) {
                     if (!compareResidents(arr.data[j], arr.data[j + 1], field)) {
                         swapResidents(arr.data[j], arr.data[j + 1]);
+                        swapped = true;
                     }
                 }
+                if (!swapped) break;
             }
             break;
             

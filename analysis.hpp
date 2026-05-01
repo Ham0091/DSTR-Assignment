@@ -43,4 +43,14 @@ void analyzeEmissionsByAgeGroupList(const LinkedList& list);
 // Shows breakdown by transport mode per city
 void analyzeEmissionsByCityList(const LinkedList& list);
 
+// ============================================================
+// SECTION 4: City Planner Recommendation Functions
+// ============================================================
+
+// Print evidence-based policy recommendations for city planners (array)
+void printCityPlannerRecommendations(const ResidentArray& arr);
+
+// Print evidence-based policy recommendations for city planners (linked list)
+void printCityPlannerRecommendationsList(const LinkedList& list);
+
 #endif // ANALYSIS_HPP

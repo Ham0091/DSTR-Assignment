@@ -44,6 +44,14 @@ void printSectionHeader(const std::string& section) {
 }
 
 // ============================================================
+// GLOBAL VARIABLES FOR EXPERIMENT RESULTS
+// ============================================================
+static double bubbleToQuickRatio = 0.0;
+static double arrayToListRatio = 0.0;
+static double linearToBinaryRatio = 0.0;
+static double insertion1stTo2ndRatio = 0.0;
+
+// ============================================================
 // MAIN FUNCTION - TEST BENCH
 // ============================================================
 int main() {
@@ -135,7 +143,7 @@ int main() {
     std::cout << "HYPOTHESIS:\n";
     std::cout << "\"I expect Quick Sort to be 5-10x faster than Bubble Sort on " << arr.count 
               << " residents\n";
-    std::cout << "because Quick Sort is O(n log n) while Bubble Sort is O(nÂ^2).\n";
+    std::cout << "because Quick Sort is O(n log n) while Bubble Sort is O(n^2).\n";
     std::cout << "For " << arr.count << " items:\n";
     std::cout << "  - Quick needs ~ " << (arr.count * (int)log2(arr.count)) << " comparisons\n";
     std::cout << "  - Bubble needs ~ " << (arr.count * arr.count / 2) << " comparisons\"\n\n";
@@ -160,21 +168,21 @@ int main() {
     std::cout << "  Insertion Sort: " << insertionMetrics.executionTimeUs << " us\n\n";
     
     std::cout << "BIG O ANALYSIS:\n";
-    std::cout << "  - Bubble Sort: O(nÂ^2) = " << arr.count << "Â^2 = " 
+    std::cout << "  - Bubble Sort: O(n^2) = " << arr.count << "^2 = " 
               << (arr.count * arr.count) << " operations\n";
     std::cout << "  - Quick Sort: O(n log n) = " << arr.count << " x log2(" << arr.count 
               << ") ~ " << (arr.count * (int)log2(arr.count)) << " operations\n";
     std::cout << "  - Ratio (Theoretical): " << ((double)(arr.count * arr.count) / 
               (arr.count * (int)log2(arr.count))) << "x\n\n";
     
-    double bubbleToQuickRatio = (quickMetrics.executionTimeUs > 0) ? 
+    bubbleToQuickRatio = (quickMetrics.executionTimeUs > 0) ? 
         ((double)bubbleMetrics.executionTimeUs / quickMetrics.executionTimeUs) : 0;
     std::cout << "JUSTIFICATION:\n";
     std::cout << "  Quick/Bubble actual ratio: " << bubbleToQuickRatio << "x faster\n";
     if (bubbleToQuickRatio >= 5 && bubbleToQuickRatio <= 10) {
-        std::cout << "  âœ“ Result matches hypothesis (5-10x range)\n";
+        std::cout << "  [+] Result matches hypothesis (5-10x range)\n";
     } else if (bubbleToQuickRatio > 10) {
-        std::cout << "  âœ“ Quick Sort even faster than expected (> 10x)\n";
+        std::cout << "  [+] Quick Sort even faster than expected (> 10x)\n";
     } else if (bubbleToQuickRatio >= 3) {
         std::cout << "  ~ Result close to hypothesis but slightly lower than expected\n";
     } else {
@@ -190,8 +198,8 @@ int main() {
     std::cout << "HYPOTHESIS:\n";
     std::cout << "\"Bubble Sort shows dramatic performance difference based on input order:\n";
     std::cout << "  - Sorted data: O(n) best case (few swaps needed)\n";
-    std::cout << "  - Random data: O(nÂ^2) average case\n";
-    std::cout << "  - Reverse sorted: O(nÂ^2) worst case (maximum swaps)\n";
+    std::cout << "  - Random data: O(n^2) average case\n";
+    std::cout << "  - Reverse sorted: O(n^2) worst case (maximum swaps)\n";
     std::cout << "I expect 10-100x difference between best and worst cases.\"\n\n";
     
     std::cout << "DATA:\n";
@@ -214,7 +222,7 @@ int main() {
     
     std::cout << "BIG O ANALYSIS:\n";
     std::cout << "  - Best case (sorted): O(n) - single pass, no swaps needed\n";
-    std::cout << "  - Average case: O(nÂ^2) - typical random input\n";
+    std::cout << "  - Average case: O(n^2) - typical random input\n";
     std::cout << "  - Expected theoretical ratio: 10-100x\n\n";
     
     double sortedToRandomRatio = (bubbleRandom.executionTimeUs > 0) ? 
@@ -222,7 +230,7 @@ int main() {
     std::cout << "JUSTIFICATION:\n";
     std::cout << "  Actual ratio (Random/Sorted): " << sortedToRandomRatio << "x\n";
     if (sortedToRandomRatio >= 10) {
-        std::cout << "  âœ“ Significant difference observed - matches expected behavior\n";
+        std::cout << "  [+] Significant difference observed - matches expected behavior\n";
     } else {
         std::cout << "  ~ Smaller difference - possibly due to modern CPU optimizations\n";
     }
@@ -265,14 +273,14 @@ int main() {
     std::cout << "  - Array: better cache locality, contiguous memory\n";
     std::cout << "  - Linked List: pointer chasing, memory fragmentation\n\n";
     
-    double arrayToListRatio = (listSort.executionTimeUs > 0) ? 
+    arrayToListRatio = (listSort.executionTimeUs > 0) ?
         ((double)listSort.executionTimeUs / arraySort.executionTimeUs) : 0;
     std::cout << "JUSTIFICATION:\n";
     std::cout << "  Actual ratio (List/Array): " << arrayToListRatio << "x slower\n";
     if (arrayToListRatio >= 2 && arrayToListRatio <= 3.5) {
-        std::cout << "  âœ“ Matches expected 2-3.5x difference\n";
+        std::cout << "  [+] Matches expected 2-3.5x difference\n";
     } else if (arrayToListRatio > 3.5) {
-        std::cout << "  âœ“ List significantly slower - pointer overhead substantial\n";
+        std::cout << "  [+] List significantly slower - pointer overhead substantial\n";
     } else {
         std::cout << "  ~ Smaller difference than expected\n";
     }
@@ -313,12 +321,12 @@ int main() {
     std::cout << "  - Binary: O(log n) = " << (int)log2(arr.count) << " comparisons max\n";
     std::cout << "  - Theoretical speedup: " << ((double)arr.count / log2(arr.count)) << "x\n\n";
     
-    double linearToBinaryRatio = (binarySearch.executionTimeUs > 0) ? 
+    linearToBinaryRatio = (binarySearch.executionTimeUs > 0) ?
         ((double)linearSearch.executionTimeUs / binarySearch.executionTimeUs) : 0;
     std::cout << "JUSTIFICATION:\n";
     std::cout << "  Actual ratio (Linear/Binary): " << linearToBinaryRatio << "x\n";
     if (linearToBinaryRatio >= 10) {
-        std::cout << "  âœ“ Binary search dramatically faster\n";
+        std::cout << "  [+] Binary search dramatically faster\n";
     }
     std::cout << "  Binary search eliminates half of search space with each comparison.\n";
     std::cout << "  IMPORTANT: Binary search requires pre-sorted data!\n";
@@ -356,7 +364,7 @@ int main() {
     std::cout << "JUSTIFICATION:\n";
     std::cout << "  Actual ratio (List/Array): " << arrayToListSearchRatio << "x slower\n";
     if (arrayToListSearchRatio >= 2) {
-        std::cout << "  âœ“ Linked list slower as expected\n";
+        std::cout << "  [+] Linked list slower as expected\n";
     }
     std::cout << "  Array's sequential memory layout is more cache-friendly.\n";
     
@@ -373,7 +381,7 @@ int main() {
     
     std::cout << "DATA:\n";
     std::cout << "  - Same array sorted twice with Insertion Sort\n";
-    std::cout << "  - First pass: random data (O(nÂ^2) average)\n";
+    std::cout << "  - First pass: random data (O(n^2) average)\n";
     std::cout << "  - Second pass: pre-sorted data (O(n) best case)\n\n";
     
     ResidentArray insertTest = copyArray(arr);
@@ -387,16 +395,16 @@ int main() {
     std::cout << "  2nd pass (sorted data): " << insertion2ndPass.executionTimeUs << " us\n\n";
     
     std::cout << "BIG O ANALYSIS:\n";
-    std::cout << "  - 1st pass: O(nÂ^2) average on random data\n";
+    std::cout << "  - 1st pass: O(n^2) average on random data\n";
     std::cout << "  - 2nd pass: O(n) best case on sorted data\n";
     std::cout << "  - Expected speedup: " << (arr.count/2) << "x\n\n";
     
-    double insertion1stTo2ndRatio = (insertion2ndPass.executionTimeUs > 0) ? 
+    insertion1stTo2ndRatio = (insertion2ndPass.executionTimeUs > 0) ?
         ((double)insertion1stPass.executionTimeUs / insertion2ndPass.executionTimeUs) : 0;
     std::cout << "JUSTIFICATION:\n";
     std::cout << "  Actual ratio (1st/2nd): " << insertion1stTo2ndRatio << "x\n";
     if (insertion1stTo2ndRatio >= 5) {
-        std::cout << "  âœ“ Significant speedup observed - demonstrates best-case efficiency\n";
+        std::cout << "  [+] Significant speedup observed - demonstrates best-case efficiency\n";
     }
     std::cout << "  Insertion sort excels when data is nearly or fully sorted!\n";
     
@@ -406,12 +414,12 @@ int main() {
     printExperimentHeader("SCALING TEST - Algorithm Behavior with Increasing Data");
     
     std::cout << "HYPOTHESIS:\n";
-    std::cout << "\"As data size grows, O(nÂ^2) algorithms degrade quadratically:\n";
+    std::cout << "\"As data size grows, O(n^2) algorithms degrade quadratically:\n";
     std::cout << "  - If n doubles, time should ~quadruple\n";
     std::cout << "  - Bubble Sort on 200 items: time T\n";
     std::cout << "  - Bubble Sort on 400 items: time ~4T\n";
     std::cout << "  - Bubble Sort on 500 items: time ~6.25T\n";
-    std::cout << "  Quick Sort should grow ~linearly: 2n â†’ ~2T\"\n\n";
+    std::cout << "  Quick Sort should grow ~linearly: 2n -> ~2T\"\n\n";
     
     // Load just City A (~200 items)
     ResidentArray small;
@@ -451,7 +459,7 @@ int main() {
     PerfMetrics largeQuick = sortArrayWithAlgorithm(largeQuickCopy, 2, 1);
     
     std::cout << "EXECUTION RESULTS:\n";
-    std::cout << "\nBubble Sort (O(nÂ^2)):\n";
+    std::cout << "\nBubble Sort (O(n^2)):\n";
     std::cout << "  Small:  " << smallBubble.executionTimeUs << " us\n";
     std::cout << "  Medium: " << mediumBubble.executionTimeUs << " us (ratio: " 
               << ((double)mediumBubble.executionTimeUs / smallBubble.executionTimeUs) << "x)\n";
@@ -466,17 +474,17 @@ int main() {
               << ((double)largeQuick.executionTimeUs / smallQuick.executionTimeUs) << "x)\n\n";
     
     std::cout << "BIG O ANALYSIS:\n";
-    std::cout << "  - Bubble: O(nÂ^2) - doubling n quadruples time\n";
+    std::cout << "  - Bubble: O(n^2) - doubling n quadruples time\n";
     std::cout << "    Small to Medium: (" << medium.count << "/" << small.count 
-              << ")Â^2 = " << ((double)medium.count / small.count) 
-              << "Â^2 = " << (((double)medium.count / small.count) * ((double)medium.count / small.count)) 
+              << ")^2 = " << ((double)medium.count / small.count) 
+              << "^2 = " << (((double)medium.count / small.count) * ((double)medium.count / small.count)) 
               << "x expected\n";
     std::cout << "  - Quick: O(n log n) - doubling n roughly doubles time\n";
     std::cout << "    Small to Medium: " << ((double)medium.count / small.count) 
               << "x expected (linear growth)\n\n";
     
     std::cout << "JUSTIFICATION:\n";
-    std::cout << "  Bubble Sort growth rate matches theoretical O(nÂ^2) degradation.\n";
+    std::cout << "  Bubble Sort growth rate matches theoretical O(n^2) degradation.\n";
     std::cout << "  Quick Sort grows much slower - efficient even with 3x more data.\n";
     std::cout << "  This demonstrates why O(n log n) algorithms are preferred for large datasets.\n";
     
@@ -533,7 +541,7 @@ int main() {
     std::cout << "  - For small n, scan is faster; for large n (millions), sorted access pattern better\n\n";
     
     std::cout << "JUSTIFICATION:\n";
-    std::cout << "  Time difference: " << (time1 > time2 ? time1 - time2 : time2 - time1) << " Î¼s\n";
+    std::cout << "  Time difference: " << (time1 > time2 ? time1 - time2 : time2 - time1) << " us\n";
     if (time2 < time1) {
         std::cout << "  Direct scan is faster on this dataset - sorting overhead not justified.\n";
     } else {
@@ -541,6 +549,11 @@ int main() {
     }
     std::cout << "  But if we need to repeat this query multiple times, sort once then quick scan wins!\n";
     
+    // ===========================================================
+    // CITY PLANNER RECOMMENDATIONS
+    // ===========================================================
+    printCityPlannerRecommendations(arr);
+
     // ===========================================================
     // SUMMARY AND CONCLUSIONS
     // ===========================================================
@@ -566,7 +579,7 @@ int main() {
     std::cout << "   - Sorting cost is worthwhile if you'll search multiple times\n\n";
     
     std::cout << "4. SCALING BEHAVIOR\n";
-    std::cout << "   - O(nÂ^2) algorithms scale poorly (quadratic growth)\n";
+    std::cout << "   - O(n^2) algorithms scale poorly (quadratic growth)\n";
     std::cout << "   - O(n log n) algorithms remain efficient at scale\n";
     std::cout << "   - Critical to choose right algorithm before data grows large\n\n";
     
@@ -576,11 +589,11 @@ int main() {
     std::cout << "   - Good hybrid choice for hybrid sort algorithms\n\n";
     
     std::cout << "RECOMMENDATIONS:\n";
-    std::cout << "âœ“ Use Quick Sort for general-purpose sorting\n";
-    std::cout << "âœ“ Use Binary Search only on pre-sorted data\n";
-    std::cout << "âœ“ Prefer Arrays over Linked Lists for performance-critical code\n";
-    std::cout << "âœ“ Profile before optimizing - but always use efficient algorithms\n";
-    std::cout << "âœ“ Consider hybrid approaches (e.g., Tim Sort) for real-world data\n\n";
+    std::cout << "[+] Use Quick Sort for general-purpose sorting\n";
+    std::cout << "[+] Use Binary Search only on pre-sorted data\n";
+    std::cout << "[+] Prefer Arrays over Linked Lists for performance-critical code\n";
+    std::cout << "[+] Profile before optimizing - but always use efficient algorithms\n";
+    std::cout << "[+] Consider hybrid approaches (e.g., Tim Sort) for real-world data\n\n";
     
     for (int i = 0; i < 80; i++) std::cout << "=";
     std::cout << "\n";
