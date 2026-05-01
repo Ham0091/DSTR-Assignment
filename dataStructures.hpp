@@ -59,10 +59,11 @@ struct Node {
 // Unlike arrays, nodes are created dynamically as needed.
 struct LinkedList {
     Node* head;
+    Node* tail;  // tracks last node for O(1) append
     int   size;
 
     // Constructor: Initialize empty list
-    LinkedList() : head(nullptr), size(0) {}
+    LinkedList() : head(nullptr), tail(nullptr), size(0) {}
 
     // Destructor: Delete all nodes to prevent memory leaks
     ~LinkedList() {
@@ -73,23 +74,19 @@ struct LinkedList {
             delete temp;
         }
         head = nullptr;
+        tail = nullptr;
         size = 0;
     }
 
-    // Method: Add a new resident at the end of the list
+    // Method: Add a new resident at the end of the list - O(1) with tail pointer
     void append(const Resident& r) {
         Node* newNode = new Node(r);
-        
         if (!head) {
-            // List is empty, new node becomes the head
             head = newNode;
+            tail = newNode;
         } else {
-            // Traverse to the last node and attach new node
-            Node* current = head;
-            while (current->next != nullptr) {
-                current = current->next;
-            }
-            current->next = newNode;
+            tail->next = newNode;
+            tail = newNode;
         }
         size++;
     }

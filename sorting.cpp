@@ -411,38 +411,51 @@ Node* quickSortLinkedListHelper(Node* head, int field) {
     if (!head || !head->next) {
         return head;
     }
-    
-    // Choose middle node as pivot
+
+    // Find middle node (pivot) and its predecessor using slow/fast pointers
+    Node* prevPivot = nullptr;
     Node* slow = head;
     Node* fast = head;
-    
+
     while (fast && fast->next) {
+        prevPivot = slow;
         slow = slow->next;
         fast = fast->next->next;
     }
-    
-    Resident pivot = slow->resident;
-    
-    // Partition
+
+    // Extract pivot node from the list before partitioning.
+    // Without this, if all elements are equal the pivot ends up in
+    // 'larger' on every recursive call, causing infinite recursion.
+    Node* pivotNode = slow;
+    if (prevPivot) {
+        prevPivot->next = pivotNode->next;
+    } else {
+        head = pivotNode->next;
+    }
+    pivotNode->next = nullptr;
+
+    // Partition remaining nodes (pivot excluded)
     Node* smaller = nullptr;
     Node* larger = nullptr;
-    partitionLinkedList(head, pivot, smaller, larger, field);
-    
-    // Recursively sort
+    partitionLinkedList(head, pivotNode->resident, smaller, larger, field);
+
+    // Recursively sort both partitions
     smaller = quickSortLinkedListHelper(smaller, field);
     larger = quickSortLinkedListHelper(larger, field);
-    
-    // Merge back
+
+    // Reconnect: smaller -> pivot -> larger
+    pivotNode->next = larger;
+
     if (!smaller) {
-        return larger;
+        return pivotNode;
     }
-    
-    Node* current = smaller;
-    while (current->next) {
-        current = current->next;
+
+    Node* tail = smaller;
+    while (tail->next) {
+        tail = tail->next;
     }
-    current->next = larger;
-    
+    tail->next = pivotNode;
+
     return smaller;
 }
 
@@ -513,15 +526,31 @@ PerfMetrics sortLinkedListWithAlgorithm(LinkedList& list, int algorithm, int fie
             break;
         }
         
-        case 2:
-            // Quick sort
+        case 2: {
+            // Quick sort — nodes are relinked, so update tail afterwards
             list.head = quickSortLinkedListHelper(list.head, field);
+            if (list.head) {
+                Node* t = list.head;
+                while (t->next) t = t->next;
+                list.tail = t;
+            } else {
+                list.tail = nullptr;
+            }
             break;
-            
-        case 3:
-            // Insertion sort
+        }
+
+        case 3: {
+            // Insertion sort — nodes are relinked, so update tail afterwards
             list.head = insertionSortLinkedListHelper(list.head, field);
+            if (list.head) {
+                Node* t = list.head;
+                while (t->next) t = t->next;
+                list.tail = t;
+            } else {
+                list.tail = nullptr;
+            }
             break;
+        }
             
         default:
             std::cerr << "Unknown algorithm: " << algorithm << std::endl;
