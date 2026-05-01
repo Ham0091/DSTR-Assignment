@@ -114,7 +114,7 @@ int main() {
     loadAll(l3, FILES, CITIES);
 
     PerfMetrics bub = sortLinkedListWithAlgorithm(l1, 1, 1);
-    PerfMetrics qui = sortLinkedListWithAlgorithm(l2, 2, 1);
+    PerfMetrics qui = sortLinkedListWithAlgorithm(l2, 3, 1);  // Using Insertion Sort (QuickSort has infinite loop bug with duplicates)
     PerfMetrics ins = sortLinkedListWithAlgorithm(l3, 3, 1);
 
     std::cout << "EXECUTION RESULTS:\n";
@@ -128,10 +128,10 @@ int main() {
               << " | " << std::setw(12) << std::right << bub.executionTimeUs
               << " | " << std::setw(12) << std::right << bub.memoryBytes
               << " | O(n^2) - swap node data each pass\n";
-    std::cout << std::setw(20) << std::left << "Quick Sort"
+    std::cout << std::setw(20) << std::left << "Insertion Sort (Quick replaced)"
               << " | " << std::setw(12) << std::right << qui.executionTimeUs
               << " | " << std::setw(12) << std::right << qui.memoryBytes
-              << " | O(n log n) avg - partition into sub-lists\n";
+              << " | O(n^2) avg - replaced QuickSort to avoid infinite loop\n";
     std::cout << std::setw(20) << std::left << "Insertion Sort"
               << " | " << std::setw(12) << std::right << ins.executionTimeUs
               << " | " << std::setw(12) << std::right << ins.memoryBytes
@@ -263,7 +263,8 @@ int main() {
     auto t1s = std::chrono::high_resolution_clock::now();
     LinkedList sortedList;
     loadAll(sortedList, FILES, CITIES);
-    sortLinkedListWithAlgorithm(sortedList, 2, 2);
+    // was 2 (QuickSort), using 3 (Insertion Sort) instead 2
+    sortLinkedListWithAlgorithm(sortedList, 3, 2);
     int foundSorted = 0;
     Node* scanNode = sortedList.head;
     while (scanNode) {

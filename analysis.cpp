@@ -111,7 +111,7 @@ void analyzeEmissionsByAgeGroupArray(const ResidentArray& arr) {
             }
         }
         if (!modeFound && modeCountsByAgeGroup[g] < 10) {
-            strcpy_s(modesByAgeGroup[g][modeCountsByAgeGroup[g]].mode,
+            strcpy(modesByAgeGroup[g][modeCountsByAgeGroup[g]].mode,
                      arr.data[i].modeOfTransport.c_str());
             modesByAgeGroup[g][modeCountsByAgeGroup[g]].count = 1;
             modesByAgeGroup[g][modeCountsByAgeGroup[g]].totalEmission = arr.data[i].monthlyEmission;
@@ -195,7 +195,7 @@ void analyzeEmissionsByModeArray(const ResidentArray& arr) {
             }
         }
         if (!modeFound && modeCount < 20) {
-            strcpy_s(modes[modeCount].mode, arr.data[i].modeOfTransport.c_str());
+            strcpy(modes[modeCount].mode, arr.data[i].modeOfTransport.c_str());
             modes[modeCount].count = 1;
             modes[modeCount].totalEmission = arr.data[i].monthlyEmission;
             modeCount++;
@@ -281,7 +281,7 @@ void analyzeEmissionsByAgeGroupList(const LinkedList& list) {
                 }
             }
             if (!modeFound && modeCountsByAgeGroup[g] < 10) {
-                strcpy_s(modesByAgeGroup[g][modeCountsByAgeGroup[g]].mode,
+                strcpy(modesByAgeGroup[g][modeCountsByAgeGroup[g]].mode,
                          current->resident.modeOfTransport.c_str());
                 modesByAgeGroup[g][modeCountsByAgeGroup[g]].count = 1;
                 modesByAgeGroup[g][modeCountsByAgeGroup[g]].totalEmission = current->resident.monthlyEmission;
@@ -380,7 +380,7 @@ void analyzeEmissionsByCityList(const LinkedList& list) {
                 }
             }
             if (!modeFound && modeCountsByCity[cityIdx] < 10) {
-                strcpy_s(modesByCity[cityIdx][modeCountsByCity[cityIdx]].mode,
+                strcpy(modesByCity[cityIdx][modeCountsByCity[cityIdx]].mode,
                          current->resident.modeOfTransport.c_str());
                 modesByCity[cityIdx][modeCountsByCity[cityIdx]].count = 1;
                 modesByCity[cityIdx][modeCountsByCity[cityIdx]].totalEmission = current->resident.monthlyEmission;
@@ -453,7 +453,7 @@ static void computeGroupStats(const ResidentArray& arr,
             }
         }
         if (!found && modeCounts[g] < 10) {
-            strcpy_s(modes[g][modeCounts[g]].mode, arr.data[i].modeOfTransport.c_str());
+            strcpy(modes[g][modeCounts[g]].mode, arr.data[i].modeOfTransport.c_str());
             modes[g][modeCounts[g]].count = 1;
             modeCounts[g]++;
         }
@@ -496,7 +496,7 @@ static void computeGroupStatsList(const LinkedList& list,
                 }
             }
             if (!found && modeCounts[g] < 10) {
-                strcpy_s(modes[g][modeCounts[g]].mode, cur->resident.modeOfTransport.c_str());
+                strcpy(modes[g][modeCounts[g]].mode, cur->resident.modeOfTransport.c_str());
                 modes[g][modeCounts[g]].count = 1;
                 modeCounts[g]++;
             }

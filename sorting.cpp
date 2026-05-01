@@ -256,12 +256,15 @@ PerfMetrics sortLinkedListByAge(LinkedList& list) {
     
     // Bubble sort on linked list: traverse and swap node data
     bool swapped;
+    int pass = 0;
+    const int maxPasses = (list.size > 0) ? list.size : 1;
     do {
         swapped = false;
         Node* current = list.head;
+        int steps = 0;
         
         while (current && current->next) {
-            if (!compareByAge(current->resident, current->next->resident)) {
+            if (compareByAge(current->next->resident, current->resident)) {
                 // Swap resident data
                 Resident temp = current->resident;
                 current->resident = current->next->resident;
@@ -269,8 +272,13 @@ PerfMetrics sortLinkedListByAge(LinkedList& list) {
                 swapped = true;
             }
             current = current->next;
+            if (++steps > list.size) {
+                std::cerr << "Warning: possible cycle detected in linked list during bubble sort." << std::endl;
+                swapped = false;
+                break;
+            }
         }
-    } while (swapped);
+    } while (swapped && ++pass < maxPasses);
     
     auto end = std::chrono::high_resolution_clock::now();
     long long duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
@@ -298,20 +306,28 @@ PerfMetrics sortLinkedListByDistance(LinkedList& list) {
     }
     
     bool swapped;
+    int pass = 0;
+    const int maxPasses = (list.size > 0) ? list.size : 1;
     do {
         swapped = false;
         Node* current = list.head;
+        int steps = 0;
         
         while (current && current->next) {
-            if (!compareByDistance(current->resident, current->next->resident)) {
+            if (compareByDistance(current->next->resident, current->resident)) {
                 Resident temp = current->resident;
                 current->resident = current->next->resident;
                 current->next->resident = temp;
                 swapped = true;
             }
             current = current->next;
+            if (++steps > list.size) {
+                std::cerr << "Warning: possible cycle detected in linked list during bubble sort." << std::endl;
+                swapped = false;
+                break;
+            }
         }
-    } while (swapped);
+    } while (swapped && ++pass < maxPasses);
     
     auto end = std::chrono::high_resolution_clock::now();
     long long duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
@@ -339,20 +355,28 @@ PerfMetrics sortLinkedListByEmission(LinkedList& list) {
     }
     
     bool swapped;
+    int pass = 0;
+    const int maxPasses = (list.size > 0) ? list.size : 1;
     do {
         swapped = false;
         Node* current = list.head;
+        int steps = 0;
         
         while (current && current->next) {
-            if (!compareByEmission(current->resident, current->next->resident)) {
+            if (compareByEmission(current->next->resident, current->resident)) {
                 Resident temp = current->resident;
                 current->resident = current->next->resident;
                 current->next->resident = temp;
                 swapped = true;
             }
             current = current->next;
+            if (++steps > list.size) {
+                std::cerr << "Warning: possible cycle detected in linked list during bubble sort." << std::endl;
+                swapped = false;
+                break;
+            }
         }
-    } while (swapped);
+    } while (swapped && ++pass < maxPasses);
     
     auto end = std::chrono::high_resolution_clock::now();
     long long duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
@@ -509,20 +533,28 @@ PerfMetrics sortLinkedListWithAlgorithm(LinkedList& list, int algorithm, int fie
             if (!list.head || !list.head->next) break;
             
             bool swapped;
+            int pass = 0;
+            const int maxPasses = (list.size > 0) ? list.size : 1;
             do {
                 swapped = false;
                 Node* current = list.head;
+                int steps = 0;
                 
                 while (current && current->next) {
-                    if (!compareResidents(current->resident, current->next->resident, field)) {
+                    if (compareResidents(current->next->resident, current->resident, field)) {
                         Resident temp = current->resident;
                         current->resident = current->next->resident;
                         current->next->resident = temp;
                         swapped = true;
                     }
                     current = current->next;
+                    if (++steps > list.size) {
+                        std::cerr << "Warning: possible cycle detected in linked list during bubble sort." << std::endl;
+                        swapped = false;
+                        break;
+                    }
                 }
-            } while (swapped);
+            } while (swapped && ++pass < maxPasses);
             break;
         }
         
