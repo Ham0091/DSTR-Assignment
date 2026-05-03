@@ -3,11 +3,8 @@
 #include <chrono>
 #include <iostream>
 
-// ============================================================
-// SECTION 1: LINEAR SEARCH FOR ARRAY BY AGE GROUP
-// ============================================================
-// Time Complexity: O(n) - must check every element
-// Space Complexity: O(1)
+// --- array: linear search by age group ---
+// O(n) time, O(1) space
 
 PerfMetrics searchByAgeGroupArray(const ResidentArray& arr, const std::string& ageGroupCode) {
     auto start = std::chrono::high_resolution_clock::now();
@@ -30,11 +27,8 @@ PerfMetrics searchByAgeGroupArray(const ResidentArray& arr, const std::string& a
     return metrics;
 }
 
-// ============================================================
-// SECTION 2: LINEAR SEARCH FOR ARRAY BY TRANSPORT MODE
-// ============================================================
-// Time Complexity: O(n)
-// Space Complexity: O(1)
+// --- array: linear search by mode ---
+// O(n) time, O(1) space
 
 PerfMetrics searchByModeArray(const ResidentArray& arr, const std::string& mode) {
     auto start = std::chrono::high_resolution_clock::now();
@@ -57,12 +51,8 @@ PerfMetrics searchByModeArray(const ResidentArray& arr, const std::string& mode)
     return metrics;
 }
 
-// ============================================================
-// SECTION 3: LINEAR SEARCH FOR ARRAY BY DISTANCE THRESHOLD
-// ============================================================
-// Time Complexity: O(n)
-// Space Complexity: O(1)
-// Finds residents with dailyDistance > threshold
+// --- array: linear search by distance threshold ---
+// O(n) time, O(1) space, just dailyDistance > threshold
 
 PerfMetrics searchByDistanceThresholdArray(const ResidentArray& arr, double threshold) {
     auto start = std::chrono::high_resolution_clock::now();
@@ -85,25 +75,22 @@ PerfMetrics searchByDistanceThresholdArray(const ResidentArray& arr, double thre
     return metrics;
 }
 
-// ============================================================
-// SECTION 4: BINARY SEARCH FOR ARRAY BY AGE
-// ============================================================
-// Time Complexity: O(log n) - MUCH FASTER than linear search
-// Space Complexity: O(1)
+// --- array: binary search by exact age ---
+// O(log n) time, O(1) space (when sorted, obviously)
 //
-// IMPORTANT NOTES:
-// - Array MUST be pre-sorted by age field (ascending)
-// - Each comparison eliminates half of remaining elements
-// - Example: 500 elements → ~9 comparisons max vs 500 for linear
-// - Works by comparing target age to middle element:
-//   * If equal: found
-//   * If target < middle: search left half
-//   * If target > middle: search right half
+// quick notes:
+// - array MUST be pre-sorted by age (ascending)
+// - each compare drops half the range
+// - 500 elems -> ~9 compares vs 500 for linear
+// - compare target with middle:
+//   * equal: found
+//   * target < middle: go left
+//   * target > middle: go right
 
 PerfMetrics binarySearchByAgeArray(const ResidentArray& arr, int targetAge) {
     auto start = std::chrono::high_resolution_clock::now();
     
-    // Binary search assumes array is sorted by age
+    // binary search assumes array is sorted by age (not sure who'd forget, but still)
     int left = 0;
     int right = arr.count - 1;
     int count = 0;
@@ -112,17 +99,17 @@ PerfMetrics binarySearchByAgeArray(const ResidentArray& arr, int targetAge) {
         int mid = left + (right - left) / 2;
         
         if (arr.data[mid].age == targetAge) {
-            // Found a match, count all residents with this age
+            // found a match, count all residents with this age
             count = 1;
             
-            // Search left to find first occurrence
+            // scan left for first occurrence
             int leftIdx = mid - 1;
             while (leftIdx >= 0 && arr.data[leftIdx].age == targetAge) {
                 count++;
                 leftIdx--;
             }
             
-            // Search right to find last occurrence
+            // scan right for last occurrence
             int rightIdx = mid + 1;
             while (rightIdx < arr.count && arr.data[rightIdx].age == targetAge) {
                 count++;
@@ -148,12 +135,8 @@ PerfMetrics binarySearchByAgeArray(const ResidentArray& arr, int targetAge) {
     return metrics;
 }
 
-// ============================================================
-// SECTION 5: LINEAR SEARCH FOR LINKED LIST BY AGE GROUP
-// ============================================================
-// Time Complexity: O(n) with pointer traversal overhead
-// Space Complexity: O(1)
-// Must use pointers to traverse the linked list
+// --- list: linear search by age group ---
+// O(n) time, O(1) space, pointer walk only
 
 PerfMetrics searchByAgeGroupList(const LinkedList& list, const std::string& ageGroupCode) {
     auto start = std::chrono::high_resolution_clock::now();
@@ -161,7 +144,7 @@ PerfMetrics searchByAgeGroupList(const LinkedList& list, const std::string& ageG
     int count = 0;
     Node* current = list.head;
     
-    // Traverse linked list using pointers
+    // walk the list node by node
     while (current != nullptr) {
         if (getAgeGroupCode(current->resident.age) == ageGroupCode) {
             count++;
@@ -180,11 +163,8 @@ PerfMetrics searchByAgeGroupList(const LinkedList& list, const std::string& ageG
     return metrics;
 }
 
-// ============================================================
-// SECTION 6: LINEAR SEARCH FOR LINKED LIST BY TRANSPORT MODE
-// ============================================================
-// Time Complexity: O(n) with pointer overhead
-// Space Complexity: O(1)
+// --- list: linear search by transport mode ---
+// O(n) time, O(1) space
 
 PerfMetrics searchByModeList(const LinkedList& list, const std::string& mode) {
     auto start = std::chrono::high_resolution_clock::now();
@@ -192,7 +172,7 @@ PerfMetrics searchByModeList(const LinkedList& list, const std::string& mode) {
     int count = 0;
     Node* current = list.head;
     
-    // Traverse linked list using pointers
+    // walk the list node by node
     while (current != nullptr) {
         if (current->resident.modeOfTransport == mode) {
             count++;
@@ -211,12 +191,8 @@ PerfMetrics searchByModeList(const LinkedList& list, const std::string& mode) {
     return metrics;
 }
 
-// ============================================================
-// SECTION 7: LINEAR SEARCH FOR LINKED LIST BY DISTANCE THRESHOLD
-// ============================================================
-// Time Complexity: O(n) with pointer overhead
-// Space Complexity: O(1)
-// Finds residents with dailyDistance > threshold
+// --- list: linear search by distance threshold ---
+// O(n) time, O(1) space, dailyDistance > threshold
 
 PerfMetrics searchByDistanceThresholdList(const LinkedList& list, double threshold) {
     auto start = std::chrono::high_resolution_clock::now();
@@ -224,7 +200,7 @@ PerfMetrics searchByDistanceThresholdList(const LinkedList& list, double thresho
     int count = 0;
     Node* current = list.head;
     
-    // Traverse linked list using pointers
+    // walk the list node by node
     while (current != nullptr) {
         if (current->resident.dailyDistance > threshold) {
             count++;

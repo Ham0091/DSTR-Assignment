@@ -7,65 +7,54 @@
 #include <string>
 #include <iomanip>
 
-// ============================================================
-// SECTION 1: Resident Struct
-// ============================================================
-// This struct stores all information for one resident.
-// monthlyEmission is pre-calculated to avoid recalculation.
+// ---- core record ----
+// holds all the fields for one resident
+// monthlyEmission is stored so we don't recompute it every time
 struct Resident {
     std::string residentID;
     int         age;
     std::string modeOfTransport;
-    double      dailyDistance;          // in km
+    double      dailyDistance;          // km per day
     double      carbonEmissionFactor;   // kg CO2 / km
     int         avgDaysPerMonth;
     std::string cityLabel;
-    double      monthlyEmission;        // pre-calculated: dailyDistance × carbonEmissionFactor × avgDaysPerMonth
+    double      monthlyEmission;        // pre-calc: distance * factor * avgDaysPerMonth
 };
 
-// ============================================================
-// SECTION 2: ResidentArray Struct (Fixed-Size Array)
-// ============================================================
-// This struct wraps a fixed array of Resident objects.
-// count tracks how many residents are actually loaded.
-// MAX_SIZE is 600 (enough for ~200 residents per dataset × 3 datasets)
+// ---- fixed-size array wrapper ----
+// count = how many slots are actually used
+// MAX_SIZE is 600 (3x datasets, give or take)
 const int MAX_SIZE = 600;
 
 struct ResidentArray {
     Resident data[MAX_SIZE];
     int      count;
 
-    // Constructor: Initialize count to 0
+    // ctor: start empty
     ResidentArray() : count(0) {}
 };
 
-// ============================================================
-// SECTION 3: Node Struct for Linked List
-// ============================================================
-// Each node holds a Resident and a pointer to the next node.
-// next is nullptr for the last node in the list.
+// ---- linked list node ----
+// one Resident + pointer to next (nullptr at the end)
 struct Node {
     Resident resident;
     Node*    next;
 
-    // Constructor: Initialize with a Resident and set next to nullptr
+    // ctor: stash resident, next starts null
     Node(const Resident& r) : resident(r), next(nullptr) {}
 };
 
-// ============================================================
-// SECTION 4: LinkedList Struct
-// ============================================================
-// Singly linked list for dynamic Resident storage.
-// Unlike arrays, nodes are created dynamically as needed.
+// ---- linked list container ----
+// dynamic nodes, no fixed max size
 struct LinkedList {
     Node* head;
-    Node* tail;  // tracks last node for O(1) append
+    Node* tail;  // keep tail so append stays O(1)
     int   size;
 
-    // Constructor: Initialize empty list
+    // ctor: empty list
     LinkedList() : head(nullptr), tail(nullptr), size(0) {}
 
-    // Destructor: Delete all nodes to prevent memory leaks
+    // dtor: clean up nodes
     ~LinkedList() {
         Node* current = head;
         while (current != nullptr) {
@@ -78,7 +67,7 @@ struct LinkedList {
         size = 0;
     }
 
-    // Method: Add a new resident at the end of the list - O(1) with tail pointer
+    // append at end (O(1) with tail)
     void append(const Resident& r) {
         Node* newNode = new Node(r);
         if (!head) {
@@ -92,28 +81,23 @@ struct LinkedList {
     }
 };
 
-// ============================================================
-// SECTION 5: File Loading Functions (Overloaded)
-// ============================================================
-// These functions load CSV files into either array or linked list.
-// Function overloading allows both to be named "loadCSV".
+// ---- CSV loaders ----
+// same name, different target container
 
-// Load CSV into fixed-size array
+// load CSV into fixed-size array
 void loadCSV(ResidentArray& arr, const std::string& filename, const std::string& cityLabel);
 
-// Load CSV into linked list
+// load CSV into linked list
 void loadCSV(LinkedList& list, const std::string& filename, const std::string& cityLabel);
 
-// ============================================================
-// SECTION 6: Helper/Display Functions
-// ============================================================
-// Print a single resident in formatted table row
+// ---- small output helpers ----
+// print one resident row
 void printResident(const Resident& r);
 
-// Print horizontal line for table borders
+// print table divider line
 void printHorizontalLine();
 
-// Center text in console output
+// center text in console output
 void printCentered(const std::string& text);
 
-#endif // DATASTRUCTURES_HPP
+#endif // datastructures.hpp guard

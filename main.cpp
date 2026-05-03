@@ -1,8 +1,6 @@
-// ============================================================
-// DSTR ASSIGNMENT - EXPERIMENT TEST BENCH
-// Main file for running comprehensive performance experiments
-// Tests sorting, searching, and data structure performance
-// ============================================================
+// --- DSTR assignment: experiment test bench ---
+// main file for running the perf experiments
+// sorting/searching/data structure comparisons all in one place
 
 #include "dataStructures.hpp"
 #include "analysis.hpp"
@@ -13,9 +11,7 @@
 #include <iomanip>
 #include <cmath>
 
-// ============================================================
-// HELPER: Create a copy of ResidentArray for testing
-// ============================================================
+// --- helper: copy ResidentArray for testing ---
 ResidentArray copyArray(const ResidentArray& source) {
     ResidentArray copy;
     copy.count = source.count;
@@ -25,9 +21,7 @@ ResidentArray copyArray(const ResidentArray& source) {
     return copy;
 }
 
-// ============================================================
-// HELPER: Print experiment separator
-// ============================================================
+// --- helper: print experiment separator ---
 void printExperimentHeader(const std::string& experimentName) {
     std::cout << "\n\n";
     for (int i = 0; i < 80; i++) std::cout << "=";
@@ -43,17 +37,13 @@ void printSectionHeader(const std::string& section) {
     std::cout << "\n";
 }
 
-// ============================================================
-// GLOBAL VARIABLES FOR EXPERIMENT RESULTS
-// ============================================================
+// --- globals for experiment results ---
 static double bubbleToQuickRatio = 0.0;
 static double arrayToListRatio = 0.0;
 static double linearToBinaryRatio = 0.0;
 static double insertion1stTo2ndRatio = 0.0;
 
-// ============================================================
-// MAIN FUNCTION - TEST BENCH
-// ============================================================
+// --- main: test bench ---
 int main() {
     std::cout << std::fixed << std::setprecision(2);
     
@@ -61,9 +51,7 @@ int main() {
     printCentered("DSTR ASSIGNMENT - PERFORMANCE EXPERIMENT TEST BENCH");
     std::cout << std::string(80, '=') << "\n";
     
-    // ============================================================
-    // SECTION 1: LOAD DATA
-    // ============================================================
+    // -- section 1: load data --
     printSectionHeader("SECTION 1: LOADING DATA FROM CSV FILES");
     
     ResidentArray arr;
@@ -85,9 +73,7 @@ int main() {
         loadCSV(list, FILES[i], CITIES[i]);
     }
     
-    // ============================================================
-    // SECTION 2: DATA VERIFICATION
-    // ============================================================
+    // -- section 2: quick data check --
     printSectionHeader("SECTION 2: DATA VERIFICATION");
     
     std::cout << "Total residents in array: " << arr.count << "\n";
@@ -121,9 +107,7 @@ int main() {
         printResident(arr.data[i]);
     }
     
-    // ============================================================
-    // SECTION 3: ANALYSIS
-    // ============================================================
+    // -- section 3: analysis --
     printSectionHeader("SECTION 3: CARBON EMISSION ANALYSIS");
     
     analyzeEmissionsByAgeGroupArray(arr);
@@ -131,13 +115,9 @@ int main() {
     analyzeEmissionsByAgeGroupList(list);
     analyzeEmissionsByCityList(list);
     
-    // ============================================================
-    // SECTION 4: EXPERIMENTS
-    // ============================================================
+    // -- section 4: experiments --
     
-    // ===========================================================
-    // EXPERIMENT 1: SORTING ALGORITHM COMPARISON
-    // ===========================================================
+    // -- experiment 1: sorting algorithm comparison --
     printExperimentHeader("SORTING ALGORITHM COMPARISON (Bubble vs Quick vs Insertion)");
     
     std::cout << "HYPOTHESIS:\n";
@@ -190,9 +170,7 @@ int main() {
     }
     std::cout << "  Quick Sort dominates due to fewer comparisons and divide-and-conquer efficiency.\n";
     
-    // ===========================================================
-    // EXPERIMENT 2: DATA STATE IMPACT
-    // ===========================================================
+    // -- experiment 2: data state impact --
     printExperimentHeader("DATA STATE IMPACT (Sorted vs Random vs Reverse)");
     
     std::cout << "HYPOTHESIS:\n";
@@ -207,12 +185,12 @@ int main() {
     std::cout << "  - Best case: Pre-sorted array\n";
     std::cout << "  - Average case: Original random array\n\n";
     
-    // Best case: sort then sort again (already sorted)
+    // best case: sort then sort again (already sorted)
     ResidentArray arrSorted = copyArray(arr);
-    sortArrayWithAlgorithm(arrSorted, 2, 1);  // sort with quick first
-    PerfMetrics bubbleSorted = sortArrayWithAlgorithm(arrSorted, 1, 1);  // then bubble (already sorted)
+    sortArrayWithAlgorithm(arrSorted, 2, 1);  // quick sort first
+    PerfMetrics bubbleSorted = sortArrayWithAlgorithm(arrSorted, 1, 1);  // then bubble, already sorted so cheap
     
-    // Average case: sort random data
+    // average case: sort random data
     ResidentArray arrRandom = copyArray(arr);
     PerfMetrics bubbleRandom = sortArrayWithAlgorithm(arrRandom, 1, 1);
     
@@ -236,9 +214,7 @@ int main() {
     }
     std::cout << "  Already-sorted data has minimal comparisons and no swaps needed.\n";
     
-    // ===========================================================
-    // EXPERIMENT 3: ARRAY vs LINKED LIST SORTING
-    // ===========================================================
+    // -- experiment 3: array vs linked list sorting --
     printExperimentHeader("ARRAY vs LINKED LIST SORTING PERFORMANCE");
     
     std::cout << "HYPOTHESIS:\n";
@@ -256,7 +232,7 @@ int main() {
     ResidentArray arrForSort = copyArray(arr);
     PerfMetrics arraySort = sortArrayWithAlgorithm(arrForSort, 2, 1);
     
-    // Reload linked list for fair comparison
+    // reload list for a fair comparison
     LinkedList listForSort;
     for (int i = 0; i < 3; ++i) {
         loadCSV(listForSort, FILES[i], CITIES[i]);
@@ -286,9 +262,7 @@ int main() {
     }
     std::cout << "  Array's contiguous memory gives substantial performance advantage.\n";
     
-    // ===========================================================
-    // EXPERIMENT 4: LINEAR vs BINARY SEARCH
-    // ===========================================================
+    // -- experiment 4: linear vs binary search --
     printExperimentHeader("LINEAR vs BINARY SEARCH (On Sorted Data)");
     
     std::cout << "HYPOTHESIS:\n";
@@ -298,10 +272,10 @@ int main() {
     std::cout << "  - Expected speedup: " << (arr.count / (2 * (int)log2(arr.count))) 
               << "x\"\n\n";
     
-    // Linear search on unsorted array
+    // linear search on unsorted array
     PerfMetrics linearSearch = searchByAgeGroupArray(arr, "26-45");
     
-    // Sort by age, then binary search
+    // sort by age, then binary search
     ResidentArray arrSortedForSearch = copyArray(arr);
     sortArrayWithAlgorithm(arrSortedForSearch, 2, 1);
     PerfMetrics binarySearch = binarySearchByAgeArray(arrSortedForSearch, 35);
@@ -331,9 +305,7 @@ int main() {
     std::cout << "  Binary search eliminates half of search space with each comparison.\n";
     std::cout << "  IMPORTANT: Binary search requires pre-sorted data!\n";
     
-    // ===========================================================
-    // EXPERIMENT 5: SEARCH PERFORMANCE - ARRAY vs LINKED LIST
-    // ===========================================================
+    // -- experiment 5: search performance (array vs list) --
     printExperimentHeader("SEARCH PERFORMANCE - ARRAY vs LINKED LIST");
     
     std::cout << "HYPOTHESIS:\n";
@@ -368,9 +340,7 @@ int main() {
     }
     std::cout << "  Array's sequential memory layout is more cache-friendly.\n";
     
-    // ===========================================================
-    // EXPERIMENT 6: INSERTION SORT ON PRE-SORTED DATA
-    // ===========================================================
+    // -- experiment 6: insertion sort on pre-sorted data --
     printExperimentHeader("INSERTION SORT ON PRE-SORTED DATA (Best Case)");
     
     std::cout << "HYPOTHESIS:\n";
@@ -387,7 +357,7 @@ int main() {
     ResidentArray insertTest = copyArray(arr);
     PerfMetrics insertion1stPass = sortArrayWithAlgorithm(insertTest, 3, 1);
     
-    // Sort again on already-sorted data
+    // sort again on already-sorted data
     PerfMetrics insertion2ndPass = sortArrayWithAlgorithm(insertTest, 3, 1);
     
     std::cout << "EXECUTION RESULTS:\n";
@@ -408,9 +378,7 @@ int main() {
     }
     std::cout << "  Insertion sort excels when data is nearly or fully sorted!\n";
     
-    // ===========================================================
-    // EXPERIMENT 7: SCALING TEST
-    // ===========================================================
+    // -- experiment 7: scaling test --
     printExperimentHeader("SCALING TEST - Algorithm Behavior with Increasing Data");
     
     std::cout << "HYPOTHESIS:\n";
@@ -421,16 +389,16 @@ int main() {
     std::cout << "  - Bubble Sort on 500 items: time ~6.25T\n";
     std::cout << "  Quick Sort should grow ~linearly: 2n -> ~2T\"\n\n";
     
-    // Load just City A (~200 items)
+    // load just City A (~200 items)
     ResidentArray small;
     loadCSV(small, FILES[0], CITIES[0]);
     
-    // Load City A + B (~400 items)
+    // load City A + B (~400 items)
     ResidentArray medium;
     loadCSV(medium, FILES[0], CITIES[0]);
     loadCSV(medium, FILES[1], CITIES[1]);
     
-    // All 3 cities (full 500+ items)
+    // all 3 cities (full 500+ items)
     ResidentArray large = copyArray(arr);
     
     std::cout << "DATA SIZES:\n";
@@ -438,7 +406,7 @@ int main() {
     std::cout << "  - Medium: " << medium.count << " residents (Cities A+B)\n";
     std::cout << "  - Large:  " << large.count << " residents (All cities)\n\n";
     
-    // Bubble sort on each size
+    // bubble sort on each size
     ResidentArray smallBubbleCopy = copyArray(small);
     PerfMetrics smallBubble = sortArrayWithAlgorithm(smallBubbleCopy, 1, 1);
     
@@ -448,7 +416,7 @@ int main() {
     ResidentArray largeBubbleCopy = copyArray(large);
     PerfMetrics largeBubble = sortArrayWithAlgorithm(largeBubbleCopy, 1, 1);
     
-    // Quick sort on each size
+    // quick sort on each size
     ResidentArray smallQuickCopy = copyArray(small);
     PerfMetrics smallQuick = sortArrayWithAlgorithm(smallQuickCopy, 2, 1);
     
@@ -488,9 +456,7 @@ int main() {
     std::cout << "  Quick Sort grows much slower - efficient even with 3x more data.\n";
     std::cout << "  This demonstrates why O(n log n) algorithms are preferred for large datasets.\n";
     
-    // ===========================================================
-    // EXPERIMENT 8: REAL-WORLD SCENARIO
-    // ===========================================================
+    // -- experiment 8: real-world scenario --
     printExperimentHeader("REAL-WORLD SCENARIO - Filtering High Carbon Emitters");
     
     std::cout << "HYPOTHESIS:\n";
@@ -505,10 +471,10 @@ int main() {
     std::cout << "  - Target: Residents using 'Car' with monthlyEmission > 80 kg CO2\n";
     std::cout << "  - Dataset: " << arr.count << " residents\n\n";
     
-    // Approach 1: Sort then scan
+    // approach 1: sort then scan
     auto start1 = std::chrono::high_resolution_clock::now();
     ResidentArray sortedEmission = copyArray(arr);
-    sortArrayWithAlgorithm(sortedEmission, 2, 2);  // Quick sort by emission
+    sortArrayWithAlgorithm(sortedEmission, 2, 2);  // quick sort by emission
     int highEmittersSorted = 0;
     for (int i = 0; i < sortedEmission.count; ++i) {
         if (sortedEmission.data[i].monthlyEmission > 80 && 
@@ -519,7 +485,7 @@ int main() {
     auto end1 = std::chrono::high_resolution_clock::now();
     auto time1 = std::chrono::duration_cast<std::chrono::microseconds>(end1 - start1).count();
     
-    // Approach 2: Direct scan
+    // approach 2: direct scan
     auto start2 = std::chrono::high_resolution_clock::now();
     int highEmittersDirect = 0;
     for (int i = 0; i < arr.count; ++i) {
@@ -549,14 +515,10 @@ int main() {
     }
     std::cout << "  But if we need to repeat this query multiple times, sort once then quick scan wins!\n";
     
-    // ===========================================================
-    // CITY PLANNER RECOMMENDATIONS
-    // ===========================================================
+    // -- city planner recommendations --
     printCityPlannerRecommendations(arr);
 
-    // ===========================================================
-    // SUMMARY AND CONCLUSIONS
-    // ===========================================================
+    // -- summary and conclusions --
     std::cout << "\n\n";
     for (int i = 0; i < 80; i++) std::cout << "=";
     std::cout << "\n";
@@ -603,4 +565,3 @@ int main() {
     
     return 0;
 }
-

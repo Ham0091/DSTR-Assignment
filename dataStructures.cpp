@@ -5,16 +5,13 @@
 #include <iomanip>
 #include <cmath>
 
-// ============================================================
-// SECTION 1: loadCSV Implementation for ResidentArray
-// ============================================================
-// Loads CSV file into fixed-size array.
-// Parses each line and calculates monthlyEmission.
-// Handles errors: missing file, wrong format, exceeding capacity.
+// --- loadCSV for ResidentArray ---
+// read CSV into the fixed array + compute monthlyEmission
+// basic guards for missing file / bad rows / overflow
 void loadCSV(ResidentArray& arr, const std::string& filename, const std::string& cityLabel) {
     std::ifstream file(filename);
     
-    // Error handling: Check if file opens successfully
+    // bail early if file won't open
     if (!file.is_open()) {
         std::cerr << "Error: Could not open file '" << filename << "'" << std::endl;
         return;
@@ -23,34 +20,34 @@ void loadCSV(ResidentArray& arr, const std::string& filename, const std::string&
     std::string line;
     int lineNumber = 0;
     
-    // Skip header line
+    // toss the header row
     if (!std::getline(file, line)) {
         std::cerr << "Error: File '" << filename << "' is empty or cannot be read." << std::endl;
         file.close();
         return;
     }
     
-    // Read each data line
+    // rest of the lines are data
     while (std::getline(file, line)) {
         lineNumber++;
         
-        // Check if we've exceeded capacity
+        // stop if we hit MAX_SIZE
         if (arr.count >= MAX_SIZE) {
             std::cerr << "Warning: Maximum capacity (600) reached. Stopping data loading." << std::endl;
             break;
         }
         
-        // Skip empty lines
+        // ignore blank lines
         if (line.empty()) {
             continue;
         }
         
-        // Parse the CSV line
+        // split the CSV line
         std::istringstream iss(line);
         std::string residentID, modeOfTransport, ageStr, distanceStr, factorStr, daysStr;
         
         try {
-            // Parse CSV fields (comma-separated)
+            // pull fields out, throw if any are missing
             if (!std::getline(iss, residentID, ',')) throw std::runtime_error("Missing ResidentID");
             if (!std::getline(iss, ageStr, ',')) throw std::runtime_error("Missing Age");
             if (!std::getline(iss, modeOfTransport, ',')) throw std::runtime_error("Missing ModeOfTransport");
@@ -58,16 +55,16 @@ void loadCSV(ResidentArray& arr, const std::string& filename, const std::string&
             if (!std::getline(iss, factorStr, ',')) throw std::runtime_error("Missing CarbonEmissionFactor");
             if (!std::getline(iss, daysStr, ',')) throw std::runtime_error("Missing AvgDaysPerMonth");
             
-            // Convert strings to appropriate types
+            // string -> numbers
             int age = std::stoi(ageStr);
             double dailyDistance = std::stod(distanceStr);
             double carbonEmissionFactor = std::stod(factorStr);
             int avgDaysPerMonth = std::stoi(daysStr);
             
-            // Calculate monthlyEmission
+            // monthlyEmission calc (daily * factor * days)
             double monthlyEmission = dailyDistance * carbonEmissionFactor * avgDaysPerMonth;
             
-            // Store resident in array
+            // stash in array slot
             Resident resident;
             resident.residentID = residentID;
             resident.age = age;
@@ -90,16 +87,13 @@ void loadCSV(ResidentArray& arr, const std::string& filename, const std::string&
     std::cout << "Loaded " << arr.count << " residents from array: " << filename << std::endl;
 }
 
-// ============================================================
-// SECTION 2: loadCSV Implementation for LinkedList
-// ============================================================
-// Loads CSV file into linked list.
-// Same parsing logic as array version, but appends to linked list.
-// Verifies list.size increases correctly.
+// --- loadCSV for LinkedList ---
+// same parsing as array version, just append nodes
+// counts new nodes so we can print a decent summary
 void loadCSV(LinkedList& list, const std::string& filename, const std::string& cityLabel) {
     std::ifstream file(filename);
     
-    // Error handling: Check if file opens successfully
+    // can't open? just bail
     if (!file.is_open()) {
         std::cerr << "Error: Could not open file '" << filename << "'" << std::endl;
         return;
@@ -109,28 +103,28 @@ void loadCSV(LinkedList& list, const std::string& filename, const std::string& c
     int lineNumber = 0;
     int initialSize = list.size;
     
-    // Skip header line
+    // skip the header row
     if (!std::getline(file, line)) {
         std::cerr << "Error: File '" << filename << "' is empty or cannot be read." << std::endl;
         file.close();
         return;
     }
     
-    // Read each data line
+    // data rows
     while (std::getline(file, line)) {
         lineNumber++;
         
-        // Skip empty lines
+        // ignore empty rows
         if (line.empty()) {
             continue;
         }
         
-        // Parse the CSV line
+        // split the row
         std::istringstream iss(line);
         std::string residentID, modeOfTransport, ageStr, distanceStr, factorStr, daysStr;
         
         try {
-            // Parse CSV fields (comma-separated)
+            // pull fields, complain if any are missing
             if (!std::getline(iss, residentID, ',')) throw std::runtime_error("Missing ResidentID");
             if (!std::getline(iss, ageStr, ',')) throw std::runtime_error("Missing Age");
             if (!std::getline(iss, modeOfTransport, ',')) throw std::runtime_error("Missing ModeOfTransport");
@@ -138,16 +132,16 @@ void loadCSV(LinkedList& list, const std::string& filename, const std::string& c
             if (!std::getline(iss, factorStr, ',')) throw std::runtime_error("Missing CarbonEmissionFactor");
             if (!std::getline(iss, daysStr, ',')) throw std::runtime_error("Missing AvgDaysPerMonth");
             
-            // Convert strings to appropriate types
+            // string -> numbers
             int age = std::stoi(ageStr);
             double dailyDistance = std::stod(distanceStr);
             double carbonEmissionFactor = std::stod(factorStr);
             int avgDaysPerMonth = std::stoi(daysStr);
             
-            // Calculate monthlyEmission
+            // calc monthlyEmission
             double monthlyEmission = dailyDistance * carbonEmissionFactor * avgDaysPerMonth;
             
-            // Create resident object
+            // build resident object
             Resident resident;
             resident.residentID = residentID;
             resident.age = age;
@@ -158,7 +152,7 @@ void loadCSV(LinkedList& list, const std::string& filename, const std::string& c
             resident.cityLabel = cityLabel;
             resident.monthlyEmission = monthlyEmission;
             
-            // Append to linked list
+            // append to list (tail keeps it O(1))
             list.append(resident);
             
         } catch (const std::exception& e) {
@@ -172,11 +166,8 @@ void loadCSV(LinkedList& list, const std::string& filename, const std::string& c
     std::cout << "Loaded " << loadedCount << " residents into linked list from: " << filename << std::endl;
 }
 
-// ============================================================
-// SECTION 3: printResident Implementation
-// ============================================================
-// Display a single resident in formatted table row.
-// Shows all key information: ID, Age, Mode, Distance, Factor, Days, MonthlyEmission
+// --- printResident ---
+// one row of the table, all the key fields
 void printResident(const Resident& r) {
     std::cout << std::setw(15) << std::left << r.residentID
               << " | " << std::setw(5) << std::right << r.age
@@ -188,28 +179,20 @@ void printResident(const Resident& r) {
               << std::endl;
 }
 
-// ============================================================
-// SECTION 4: printHorizontalLine Implementation
-// ============================================================
-// Print a horizontal line for table borders.
-// Uses ASCII '=' characters for clean, cross-platform compatibility.
-// 80 character width matches standard terminal width.
+// --- printHorizontalLine ---
+// simple ASCII line, 80 cols should work in most terminals
 void printHorizontalLine() {
     std::cout << std::string(80, '=') << "\n";
 }
 
-// ============================================================
-// SECTION 5: printCentered Implementation
-// ============================================================
-// Center text in console output by adding padding.
-// Uses only ASCII characters - no Unicode.
-// Standard console width: 80 characters.
-// Formula: padding = (80 - text.length()) / 2
+// --- printCentered ---
+// crude centering for 80-col terminals, should work fine
+// padding = (80 - text.length()) / 2
 void printCentered(const std::string& text) {
     const int consoleWidth = 80;
     int padding = (consoleWidth - text.length()) / 2;
     
-    // Print padding spaces followed by the text
+    // print padding then the text
     if (padding > 0) {
         std::cout << std::string(padding, ' ');
     }

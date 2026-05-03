@@ -3,9 +3,7 @@
 #include <iomanip>
 #include <cstring>
 
-// ============================================================
-// SECTION 1: Age Group Classification Implementation
-// ============================================================
+// --- age group mapping stuff ---
 
 std::string getAgeGroup(int age) {
     if (age >= 6 && age <= 17) {
@@ -37,10 +35,8 @@ std::string getAgeGroupCode(int age) {
     return "Unknown";
 }
 
-// ============================================================
-// SECTION 2: Helper Struct for Mode Analysis
-// ============================================================
-// Tracks statistics for each transport mode
+// --- helper struct for mode stats ---
+// keeps count + total emission per mode
 struct ModeInfo {
     char mode[50];
     int count;
@@ -51,7 +47,7 @@ struct ModeInfo {
     }
 };
 
-// Internal helper: return age group index (0-4), or -1 if out of range
+// internal helper: age -> group index (0-4), -1 if out of range
 static int ageGroupIndex(int age) {
     if (age >= 6  && age <= 17)  return 0;
     if (age >= 18 && age <= 25)  return 1;
@@ -61,7 +57,7 @@ static int ageGroupIndex(int age) {
     return -1;
 }
 
-// Short display names for table columns (kept narrow for alignment)
+// short labels so the table doesn't wrap
 static const char* GROUP_SHORT[5] = {
     "6-17 (Child/Teen)",
     "18-25 (University)",
@@ -70,7 +66,7 @@ static const char* GROUP_SHORT[5] = {
     "61+   (Senior)"
 };
 
-// Full names matching the assignment brief
+// full labels used in the report text
 static const char* GROUP_FULL[5] = {
     "6-17: Children & Teenagers",
     "18-25: University Students / Young Adults",
@@ -79,9 +75,7 @@ static const char* GROUP_FULL[5] = {
     "61-100: Senior Citizens / Retirees"
 };
 
-// ============================================================
-// SECTION 3: Analyze Emissions by Age Group (Array)
-// ============================================================
+// --- analyze by age group (array) ---
 
 void analyzeEmissionsByAgeGroupArray(const ResidentArray& arr) {
     if (arr.count == 0) {
@@ -171,9 +165,7 @@ void analyzeEmissionsByAgeGroupArray(const ResidentArray& arr) {
     std::cout << std::endl;
 }
 
-// ============================================================
-// SECTION 4: Analyze Emissions by Transport Mode (Array)
-// ============================================================
+// --- analyze by transport mode (array) ---
 
 void analyzeEmissionsByModeArray(const ResidentArray& arr) {
     if (arr.count == 0) {
@@ -202,7 +194,7 @@ void analyzeEmissionsByModeArray(const ResidentArray& arr) {
         }
     }
 
-    // Sort by total emission descending (bubble sort)
+    // sort by total emission desc (bubble sort, yeah yeah)
     for (int i = 0; i < modeCount - 1; i++) {
         for (int j = 0; j < modeCount - 1 - i; j++) {
             if (modes[j].totalEmission < modes[j + 1].totalEmission) {
@@ -249,9 +241,7 @@ void analyzeEmissionsByModeArray(const ResidentArray& arr) {
     std::cout << std::endl;
 }
 
-// ============================================================
-// SECTION 5: Analyze Emissions by Age Group (Linked List)
-// ============================================================
+// --- analyze by age group (linked list) ---
 
 void analyzeEmissionsByAgeGroupList(const LinkedList& list) {
     if (list.size == 0) {
@@ -343,9 +333,7 @@ void analyzeEmissionsByAgeGroupList(const LinkedList& list) {
     std::cout << std::endl;
 }
 
-// ============================================================
-// SECTION 6: Analyze Emissions by City (Linked List)
-// ============================================================
+// --- analyze by city (linked list) ---
 
 void analyzeEmissionsByCityList(const LinkedList& list) {
     if (list.size == 0) {
@@ -426,10 +414,8 @@ void analyzeEmissionsByCityList(const LinkedList& list) {
     std::cout << std::endl;
 }
 
-// ============================================================
-// SECTION 7: Internal helper - compute group stats from array
-// ============================================================
-// Fills counts[], avgEmissions[], topModes[] for 5 age groups.
+// --- helper: compute group stats from array ---
+// fills counts/avgEmissions/topModes for the 5 groups
 static void computeGroupStats(const ResidentArray& arr,
                                int counts[5],
                                double avgEmissions[5],
@@ -469,9 +455,7 @@ static void computeGroupStats(const ResidentArray& arr,
     }
 }
 
-// ============================================================
-// SECTION 8: Internal helper - compute group stats from linked list
-// ============================================================
+// --- helper: compute group stats from linked list ---
 static void computeGroupStatsList(const LinkedList& list,
                                    int counts[5],
                                    double avgEmissions[5],
@@ -514,14 +498,12 @@ static void computeGroupStatsList(const LinkedList& list,
     }
 }
 
-// ============================================================
-// SECTION 9: Shared recommendation printer
-// ============================================================
+// --- shared recommendation printer ---
 static void printRecommendationBody(int totalResidents,
                                      int counts[5],
                                      double avgEmissions[5],
                                      std::string topModes[5]) {
-    // Find highest and lowest emitting groups
+    // find highest + lowest avg groups
     int highestGroup = 0, lowestGroup = -1;
     for (int g = 0; g < 5; g++) {
         if (avgEmissions[g] > avgEmissions[highestGroup]) highestGroup = g;
@@ -532,7 +514,7 @@ static void printRecommendationBody(int totalResidents,
     }
     if (lowestGroup == -1) lowestGroup = 0;
 
-    // --- Header ---
+    // header block
     std::cout << "\n\n";
     for (int i = 0; i < 80; i++) std::cout << "=";
     std::cout << "\n";
@@ -540,7 +522,7 @@ static void printRecommendationBody(int totalResidents,
     for (int i = 0; i < 80; i++) std::cout << "=";
     std::cout << "\n\n";
 
-    // --- Risk assessment table ---
+    // risk assessment table
     std::cout << "EMISSION RISK ASSESSMENT BY AGE GROUP (" << totalResidents << " residents):\n";
     std::cout << std::string(80, '-') << "\n";
     std::cout << std::setw(22) << std::left  << "Age Group"
@@ -563,7 +545,7 @@ static void printRecommendationBody(int totalResidents,
     }
     std::cout << std::string(80, '-') << "\n\n";
 
-    // --- Per-group policy recommendations ---
+    // per-group recs
     std::cout << "TARGETED POLICY RECOMMENDATIONS:\n";
     std::cout << std::string(80, '-') << "\n\n";
 
@@ -605,7 +587,7 @@ static void printRecommendationBody(int totalResidents,
     std::cout << "  Policy 2:  Accessible public transport (low-floor buses, priority seating)\n";
     std::cout << "  Policy 3:  Age-friendly walking infrastructure (wider paths, rest areas)\n\n";
 
-    // --- Overall top 5 ---
+    // overall top 5 list
     std::cout << std::string(80, '-') << "\n";
     std::cout << "TOP 5 OVERALL POLICY PRIORITIES (highest-impact first):\n";
     std::cout << std::string(80, '-') << "\n";
@@ -619,9 +601,7 @@ static void printRecommendationBody(int totalResidents,
     std::cout << std::string(80, '=') << "\n";
 }
 
-// ============================================================
-// SECTION 10: City Planner Recommendations (Array)
-// ============================================================
+// --- city planner recs (array) ---
 
 void printCityPlannerRecommendations(const ResidentArray& arr) {
     if (arr.count == 0) {
@@ -635,9 +615,7 @@ void printCityPlannerRecommendations(const ResidentArray& arr) {
     printRecommendationBody(arr.count, counts, avgEmissions, topModes);
 }
 
-// ============================================================
-// SECTION 11: City Planner Recommendations (Linked List)
-// ============================================================
+// --- city planner recs (linked list) ---
 
 void printCityPlannerRecommendationsList(const LinkedList& list) {
     if (list.size == 0) {

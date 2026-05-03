@@ -4,55 +4,49 @@
 #include "dataStructures.hpp"
 #include <chrono>
 
-// ============================================================
-// SECTION 1: Performance Metrics Struct
-// ============================================================
-// Records performance data for sorting operations.
-// executionTimeUs: Time taken in microseconds (for precision)
-// memoryBytes: Total memory used by the data structure
-// itemsProcessed: Number of residents sorted
+// --- perf metrics ---
+// capture timing + memory for the sort runs
+// executionTimeUs: time in microseconds
+// memoryBytes: total memory used by the container
+// itemsProcessed: number of residents sorted
 struct PerfMetrics {
     long long executionTimeUs;     // execution time in microseconds
     long long memoryBytes;         // memory used in bytes
     int itemsProcessed;            // number of items processed
 };
 
-// ============================================================
-// SECTION 2: Array-Based Sorting Functions
-// ============================================================
-// These functions sort the ResidentArray and return performance metrics.
+// --- array sorting ---
+// sort the ResidentArray and return PerfMetrics
 
-// Sort array by age (ascending) - uses bubble sort
+// sort by age (ascending) - bubble sort
 PerfMetrics sortArrayByAge(ResidentArray& arr);
 
-// Sort array by daily distance (ascending) - uses bubble sort
+// sort by daily distance (ascending) - bubble sort
 PerfMetrics sortArrayByDistance(ResidentArray& arr);
 
-// Sort array by monthly emission (ascending) - uses bubble sort
+// sort by monthly emission (ascending) - bubble sort
 PerfMetrics sortArrayByEmission(ResidentArray& arr);
 
-// Flexible array sorting with algorithm selection
+// flexible array sort w/ algorithm selection
 // algorithm: 1=Bubble, 2=Quick, 3=Insertion
 // field: 1=age, 2=emission, 3=distance
 PerfMetrics sortArrayWithAlgorithm(ResidentArray& arr, int algorithm, int field);
 
-// ============================================================
-// SECTION 3: Linked List Sorting Functions
-// ============================================================
-// These functions sort the LinkedList and return performance metrics.
+// --- linked list sorting ---
+// sort the LinkedList and return PerfMetrics
 
-// Sort linked list by age (ascending) - uses bubble sort
+// sort list by age (ascending) - bubble sort
 PerfMetrics sortLinkedListByAge(LinkedList& list);
 
-// Sort linked list by daily distance (ascending) - uses bubble sort
+// sort list by daily distance (ascending) - bubble sort
 PerfMetrics sortLinkedListByDistance(LinkedList& list);
 
-// Sort linked list by monthly emission (ascending) - uses bubble sort
+// sort list by monthly emission (ascending) - bubble sort
 PerfMetrics sortLinkedListByEmission(LinkedList& list);
 
-// Flexible linked list sorting with algorithm selection
+// flexible list sort w/ algorithm selection
 // algorithm: 1=Bubble, 2=Quick, 3=Insertion
 // field: 1=age, 2=emission, 3=distance
 PerfMetrics sortLinkedListWithAlgorithm(LinkedList& list, int algorithm, int field);
 
-#endif // SORTING_HPP
+#endif // sorting.hpp guard

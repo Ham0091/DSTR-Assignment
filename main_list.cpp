@@ -1,10 +1,7 @@
-// ============================================================
-// PROGRAM 2: SINGLY LINKED LIST IMPLEMENTATION
+// --- program 2: singly linked list implementation ---
 // CT077-3-2-DSTR - Carbon Emission Analysis using LinkedList
-// ============================================================
-// This program demonstrates all operations using LinkedList only.
-// Companion program: main_array.cpp (array implementation)
-// ============================================================
+// list-only run for comparison
+// see main_array.cpp for the array version
 
 #include "dataStructures.hpp"
 #include "analysis.hpp"
@@ -30,7 +27,7 @@ void printSec(const std::string& s) {
     std::cout << "\n";
 }
 
-// Helper: load a fresh linked list from all 3 files
+// helper: load a fresh list from the 3 CSVs
 static void loadAll(LinkedList& list,
                     const std::string files[3],
                     const std::string cities[3]) {
@@ -45,9 +42,7 @@ int main() {
     printCentered("DSTR Assignment - Urban Carbon Emission Analysis");
     std::cout << std::string(80, '=') << "\n";
 
-    // ========================================================
-    // SECTION 1: LOAD DATA INTO SINGLY LINKED LIST
-    // ========================================================
+    // -- section 1: load data into the linked list --
     printSec("SECTION 1: LOADING DATA INTO SINGLY LINKED LIST (dynamic allocation)");
 
     const std::string FILES[3] = {
@@ -60,9 +55,7 @@ int main() {
     LinkedList list;
     loadAll(list, FILES, CITIES);
 
-    // ========================================================
-    // SECTION 2: DATA VERIFICATION
-    // ========================================================
+    // -- section 2: quick data sanity check --
     printSec("SECTION 2: DATA VERIFICATION");
 
     long long nodeBytes     = sizeof(Node) * list.size;
@@ -88,16 +81,12 @@ int main() {
     for (int i = 0; i < 5 && cur != nullptr; i++, cur = cur->next)
         printResident(cur->resident);
 
-    // ========================================================
-    // SECTION 3: CARBON EMISSION ANALYSIS (LINKED LIST)
-    // ========================================================
+    // -- section 3: carbon analysis (linked list) --
     printSec("SECTION 3: CARBON EMISSION ANALYSIS (Pointer Traversal)");
     analyzeEmissionsByAgeGroupList(list);
     analyzeEmissionsByCityList(list);
 
-    // ========================================================
-    // EXPERIMENT 1: SORTING ALGORITHM COMPARISON (LINKED LIST)
-    // ========================================================
+    // -- experiment 1: sorting algorithm comparison (linked list) --
     printExpHeader("SORTING ALGORITHM COMPARISON - Bubble vs Quick vs Insertion (Linked List)");
 
     std::cout << "HYPOTHESIS:\n";
@@ -107,14 +96,14 @@ int main() {
 
     std::cout << "DATA: " << list.size << " nodes, sorting by Age ascending.\n\n";
 
-    // Each sort mutates the list so we need separate lists
+    // each sort mutates the list, so we reload copies
     LinkedList l1, l2, l3;
     loadAll(l1, FILES, CITIES);
     loadAll(l2, FILES, CITIES);
     loadAll(l3, FILES, CITIES);
 
     PerfMetrics bub = sortLinkedListWithAlgorithm(l1, 1, 1);
-    PerfMetrics qui = sortLinkedListWithAlgorithm(l2, 3, 1);  // Using Insertion Sort (QuickSort has infinite loop bug with duplicates)
+    PerfMetrics qui = sortLinkedListWithAlgorithm(l2, 3, 1);  // using insertion sort (quicksort looped on dupes)
     PerfMetrics ins = sortLinkedListWithAlgorithm(l3, 3, 1);
 
     std::cout << "EXECUTION RESULTS:\n";
@@ -145,9 +134,7 @@ int main() {
     std::cout << "  Pointer traversal adds cache-miss overhead vs array's sequential access.\n";
     std::cout << "  Quick Sort still dominates because divide-and-conquer reduces total work.\n";
 
-    // ========================================================
-    // EXPERIMENT 2: DATA STATE IMPACT ON LINKED LIST SORTING
-    // ========================================================
+    // -- experiment 2: data state impact on linked list sorting --
     printExpHeader("DATA STATE IMPACT - Bubble Sort on Random vs Sorted (Linked List)");
 
     std::cout << "HYPOTHESIS:\n";
@@ -157,8 +144,8 @@ int main() {
     LinkedList stateList;
     loadAll(stateList, FILES, CITIES);
 
-    PerfMetrics pass1 = sortLinkedListWithAlgorithm(stateList, 1, 1);  // random -> sorted
-    PerfMetrics pass2 = sortLinkedListWithAlgorithm(stateList, 1, 1);  // already sorted
+    PerfMetrics pass1 = sortLinkedListWithAlgorithm(stateList, 1, 1);  // pass 1: random -> sorted
+    PerfMetrics pass2 = sortLinkedListWithAlgorithm(stateList, 1, 1);  // pass 2: already sorted
 
     std::cout << "EXECUTION RESULTS:\n";
     std::cout << "  1st pass (random data) : " << pass1.executionTimeUs << " us  -> O(n^2)\n";
@@ -177,9 +164,7 @@ int main() {
     else
         std::cout << "  [~] Pointer overhead may dampen observable ratio.\n";
 
-    // ========================================================
-    // EXPERIMENT 3: LINEAR SEARCH ALL 3 CRITERIA (LINKED LIST)
-    // ========================================================
+    // -- experiment 3: linear search all 3 criteria (linked list) --
     printExpHeader("LINEAR SEARCH - All 3 Criteria (Linked List)");
 
     std::cout << "HYPOTHESIS:\n";
@@ -213,20 +198,18 @@ int main() {
     std::cout << "  Array search is faster despite same O(n) because data is contiguous.\n";
     std::cout << "  Binary search impossible: O(n) to reach position k, no index shortcut.\n";
 
-    // ========================================================
-    // EXPERIMENT 4: MEMORY OVERHEAD ANALYSIS
-    // ========================================================
+    // -- experiment 4: memory overhead analysis --
     printExpHeader("MEMORY OVERHEAD ANALYSIS - LinkedList vs Array");
 
     std::cout << "HYPOTHESIS:\n";
     std::cout << "  LinkedList has pointer overhead but NO wasted pre-allocated space.\n";
     std::cout << "  Array wastes space for unused slots (MAX_SIZE - actual count).\n\n";
 
-    long long arrAllocated = sizeof(Resident) * 600;       // MAX_SIZE=600
+    long long arrAllocated = sizeof(Resident) * 600;       // MAX_SIZE=600 (fixed cap)
     long long arrUsed      = sizeof(Resident) * list.size;
     long long arrWasted    = arrAllocated - arrUsed;
     long long listUsed     = sizeof(Node) * list.size;
-    long long listExtra    = ptrOverhead;                   // pointer bytes total
+    long long listExtra    = ptrOverhead;                   // total pointer bytes
 
     std::cout << "RESULTS:\n";
     printHorizontalLine();
@@ -251,9 +234,7 @@ int main() {
     std::cout << "  Linked list is better when data size is unknown or grows unpredictably.\n";
     std::cout << "  Trade-off: speed (array) vs flexibility (linked list).\n";
 
-    // ========================================================
-    // EXPERIMENT 5: REAL-WORLD QUERY (LINKED LIST)
-    // ========================================================
+    // -- experiment 5: real-world query (linked list) --
     printExpHeader("REAL-WORLD QUERY - High Carbon Emitters (Linked List)");
 
     std::cout << "HYPOTHESIS:\n";
@@ -263,7 +244,7 @@ int main() {
     auto t1s = std::chrono::high_resolution_clock::now();
     LinkedList sortedList;
     loadAll(sortedList, FILES, CITIES);
-    // was 2 (QuickSort), using 3 (Insertion Sort) instead 2
+    // was 2 (QuickSort), using 3 (Insertion Sort) instead for now
     sortLinkedListWithAlgorithm(sortedList, 3, 2);
     int foundSorted = 0;
     Node* scanNode = sortedList.head;
@@ -297,14 +278,10 @@ int main() {
         std::cout << "  [~] Results similar on small dataset - difference grows with scale.\n";
     std::cout << "  If query repeated many times: sort once then scan = overall O(n log n) amortized.\n";
 
-    // ========================================================
-    // CITY PLANNER RECOMMENDATIONS
-    // ========================================================
+    // -- city planner recommendations --
     printCityPlannerRecommendationsList(list);
 
-    // ========================================================
-    // PROGRAM SUMMARY
-    // ========================================================
+    // -- program summary --
     std::cout << "\n\n";
     std::cout << std::string(80, '=') << "\n";
     printCentered("PROGRAM 2 COMPLETE - LINKED LIST IMPLEMENTATION SUMMARY");

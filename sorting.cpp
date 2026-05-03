@@ -2,12 +2,9 @@
 #include <chrono>
 #include <iostream>
 
-// ============================================================
-// SECTION 1: Helper Functions for Array Comparison and Swapping
-// ============================================================
+// --- helper funcs for comparing/swapping ---
 
-// Helper: Compare two residents by a specific field
-// Returns: true if a should come before b (ascending order)
+// compare by field (true = a before b)
 bool compareByAge(const Resident& a, const Resident& b) {
     return a.age < b.age;
 }
@@ -20,8 +17,7 @@ bool compareByEmission(const Resident& a, const Resident& b) {
     return a.monthlyEmission < b.monthlyEmission;
 }
 
-// Helper: Compare by field number
-// field: 1=age, 2=emission, 3=distance
+// compare by field number (1=age, 2=emission, 3=distance)
 bool compareResidents(const Resident& a, const Resident& b, int field) {
     switch (field) {
         case 1: return compareByAge(a, b);
@@ -31,25 +27,20 @@ bool compareResidents(const Resident& a, const Resident& b, int field) {
     }
 }
 
-// Helper: Swap two residents in array
+// swap two residents in the array
 void swapResidents(Resident& a, Resident& b) {
     Resident temp = a;
     a = b;
     b = temp;
 }
 
-// ============================================================
-// SECTION 2: BUBBLE SORT FOR ARRAY
-// ============================================================
-// Time Complexity: O(n²) - nested loops
-// Space Complexity: O(1) - in-place sorting
-// Best case: O(n) - when array is already sorted
-// Worst case: O(n²) - when array is reverse sorted
+// --- bubble sort for array ---
+// O(n^2) time, O(1) space (best case O(n) when already sorted)
 
 PerfMetrics sortArrayByAge(ResidentArray& arr) {
     auto start = std::chrono::high_resolution_clock::now();
     
-    // Bubble sort with early-exit: if no swaps in a full pass, data is sorted (O(n) best case)
+    // bubble sort w/ early-exit if no swaps in a pass
     for (int i = 0; i < arr.count - 1; i++) {
         bool swapped = false;
         for (int j = 0; j < arr.count - 1 - i; j++) {
@@ -122,24 +113,19 @@ PerfMetrics sortArrayByEmission(ResidentArray& arr) {
     return metrics;
 }
 
-// ============================================================
-// SECTION 3: QUICK SORT FOR ARRAY
-// ============================================================
-// Time Complexity: O(n log n) average, O(n²) worst case
-// Space Complexity: O(log n) for recursion stack
-// Generally FASTER than bubble sort on random data
+// --- quick sort for array ---
+// O(n log n) avg, O(n^2) worst, recursion stack O(log n)
 
-// Helper: Partition for quicksort
-// Returns the index of the pivot after partitioning
+// partition for quicksort (returns pivot index)
 int partitionArray(ResidentArray& arr, int low, int high, int field) {
-    // Choose middle element as pivot
+    // pick middle element as pivot
     int midIndex = low + (high - low) / 2;
     swapResidents(arr.data[midIndex], arr.data[high]);
     
     Resident& pivot = arr.data[high];
     int i = low - 1;
     
-    // Partition: elements < pivot on left, > pivot on right
+    // partition: < pivot on left, > pivot on right
     for (int j = low; j < high; j++) {
         if (compareResidents(arr.data[j], pivot, field)) {
             i++;
@@ -150,7 +136,7 @@ int partitionArray(ResidentArray& arr, int low, int high, int field) {
     return i + 1;
 }
 
-// Helper: Recursive quicksort
+// recursive quicksort
 void quickSortArrayHelper(ResidentArray& arr, int low, int high, int field) {
     if (low < high) {
         int pi = partitionArray(arr, low, high, field);
@@ -159,39 +145,33 @@ void quickSortArrayHelper(ResidentArray& arr, int low, int high, int field) {
     }
 }
 
-// ============================================================
-// SECTION 4: INSERTION SORT FOR ARRAY
-// ============================================================
-// Time Complexity: O(n) best case (already sorted), O(n²) worst case
-// Space Complexity: O(1) - in-place
-// Often faster than bubble sort due to fewer comparisons
+// --- insertion sort for array ---
+// O(n) best case, O(n^2) worst, in-place
 
 void insertionSortArray(ResidentArray& arr, int field) {
-    // Build sorted array one element at a time
+    // build sorted array one element at a time
     for (int i = 1; i < arr.count; i++) {
         Resident key = arr.data[i];
         int j = i - 1;
         
-        // Shift elements greater than key one position right
+        // shift elements greater than key to the right
         while (j >= 0 && !compareResidents(arr.data[j], key, field)) {
             arr.data[j + 1] = arr.data[j];
             j--;
         }
-        // Insert key at correct position
+        // drop key into place
         arr.data[j + 1] = key;
     }
 }
 
-// ============================================================
-// SECTION 5: FLEXIBLE ARRAY SORTING WITH ALGORITHM SELECTION
-// ============================================================
+// --- flexible array sort (algorithm picker) ---
 
 PerfMetrics sortArrayWithAlgorithm(ResidentArray& arr, int algorithm, int field) {
     auto start = std::chrono::high_resolution_clock::now();
     
     switch (algorithm) {
         case 1:
-            // Bubble sort with early-exit for O(n) best case on sorted data
+            // bubble sort w/ early-exit (best case O(n))
             for (int i = 0; i < arr.count - 1; i++) {
                 bool swapped = false;
                 for (int j = 0; j < arr.count - 1 - i; j++) {
@@ -205,14 +185,14 @@ PerfMetrics sortArrayWithAlgorithm(ResidentArray& arr, int algorithm, int field)
             break;
             
         case 2:
-            // Quick sort
+            // quick sort
             if (arr.count > 1) {
                 quickSortArrayHelper(arr, 0, arr.count - 1, field);
             }
             break;
             
         case 3:
-            // Insertion sort
+            // insertion sort
             insertionSortArray(arr, field);
             break;
             
@@ -232,18 +212,14 @@ PerfMetrics sortArrayWithAlgorithm(ResidentArray& arr, int algorithm, int field)
     return metrics;
 }
 
-// ============================================================
-// SECTION 6: BUBBLE SORT FOR LINKED LIST
-// ============================================================
-// Time Complexity: O(n²) - nested loops with pointer traversal
-// Space Complexity: O(1) - only node pointers, no extra space
-// Much slower than array version due to pointer overhead
+// --- bubble sort for linked list ---
+// O(n^2) time, O(1) space, pointer overhead makes it slow
 
 PerfMetrics sortLinkedListByAge(LinkedList& list) {
     auto start = std::chrono::high_resolution_clock::now();
     
     if (!list.head || !list.head->next) {
-        // List is empty or has only one element
+        // list is empty or a single node
         auto end = std::chrono::high_resolution_clock::now();
         long long duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
         
@@ -254,7 +230,7 @@ PerfMetrics sortLinkedListByAge(LinkedList& list) {
         return metrics;
     }
     
-    // Bubble sort on linked list: traverse and swap node data
+    // bubble sort on linked list: traverse + swap node data
     bool swapped;
     int pass = 0;
     const int maxPasses = (list.size > 0) ? list.size : 1;
@@ -265,7 +241,7 @@ PerfMetrics sortLinkedListByAge(LinkedList& list) {
         
         while (current && current->next) {
             if (compareByAge(current->next->resident, current->resident)) {
-                // Swap resident data
+                // swap resident data
                 Resident temp = current->resident;
                 current->resident = current->next->resident;
                 current->next->resident = temp;
@@ -389,15 +365,11 @@ PerfMetrics sortLinkedListByEmission(LinkedList& list) {
     return metrics;
 }
 
-// ============================================================
-// SECTION 7: QUICK SORT FOR LINKED LIST
-// ============================================================
-// Time Complexity: O(n log n) average, O(n²) worst case
-// Space Complexity: O(log n) for recursion stack
-// Partition linked list by creating new lists
+// --- quick sort for linked list ---
+// O(n log n) avg, O(n^2) worst, recursion stack O(log n)
+// we partition by relinking nodes
 
-// Helper: Partition linked list by pivot
-// Returns pair of (smaller list, larger list)
+// partition linked list by pivot (returns smaller/larger lists)
 void partitionLinkedList(Node* head, Resident pivot, Node*& smaller, Node*& larger, int field) {
     smaller = nullptr;
     larger = nullptr;
@@ -430,13 +402,13 @@ void partitionLinkedList(Node* head, Resident pivot, Node*& smaller, Node*& larg
     }
 }
 
-// Helper: Recursive quicksort for linked list
+// recursive quicksort for linked list
 Node* quickSortLinkedListHelper(Node* head, int field) {
     if (!head || !head->next) {
         return head;
     }
 
-    // Find middle node (pivot) and its predecessor using slow/fast pointers
+    // find middle node (pivot) using slow/fast pointers
     Node* prevPivot = nullptr;
     Node* slow = head;
     Node* fast = head;
@@ -447,9 +419,8 @@ Node* quickSortLinkedListHelper(Node* head, int field) {
         fast = fast->next->next;
     }
 
-    // Extract pivot node from the list before partitioning.
-    // Without this, if all elements are equal the pivot ends up in
-    // 'larger' on every recursive call, causing infinite recursion.
+    // pull pivot out before partitioning
+    // without this, all-equal data can recurse forever (ask me how i know)
     Node* pivotNode = slow;
     if (prevPivot) {
         prevPivot->next = pivotNode->next;
@@ -458,16 +429,16 @@ Node* quickSortLinkedListHelper(Node* head, int field) {
     }
     pivotNode->next = nullptr;
 
-    // Partition remaining nodes (pivot excluded)
+    // partition remaining nodes (pivot excluded)
     Node* smaller = nullptr;
     Node* larger = nullptr;
     partitionLinkedList(head, pivotNode->resident, smaller, larger, field);
 
-    // Recursively sort both partitions
+    // recursively sort both sides
     smaller = quickSortLinkedListHelper(smaller, field);
     larger = quickSortLinkedListHelper(larger, field);
 
-    // Reconnect: smaller -> pivot -> larger
+    // reconnect: smaller -> pivot -> larger
     pivotNode->next = larger;
 
     if (!smaller) {
@@ -483,12 +454,8 @@ Node* quickSortLinkedListHelper(Node* head, int field) {
     return smaller;
 }
 
-// ============================================================
-// SECTION 8: INSERTION SORT FOR LINKED LIST
-// ============================================================
-// Time Complexity: O(n²) but with fewer swaps than bubble sort
-// Space Complexity: O(1)
-// More efficient for linked list since insertion is O(1) with pointer
+// --- insertion sort for linked list ---
+// O(n^2) time, O(1) space, usually fewer swaps than bubble
 
 Node* insertionSortLinkedListHelper(Node* head, int field) {
     if (!head || !head->next) {
@@ -501,7 +468,7 @@ Node* insertionSortLinkedListHelper(Node* head, int field) {
     while (current) {
         Node* next = current->next;
         
-        // Find position to insert current node
+        // find where to insert current node
         if (!sorted || compareResidents(current->resident, sorted->resident, field)) {
             current->next = sorted;
             sorted = current;
@@ -520,16 +487,14 @@ Node* insertionSortLinkedListHelper(Node* head, int field) {
     return sorted;
 }
 
-// ============================================================
-// SECTION 9: FLEXIBLE LINKED LIST SORTING WITH ALGORITHM SELECTION
-// ============================================================
+// --- flexible linked list sort (algorithm picker) ---
 
 PerfMetrics sortLinkedListWithAlgorithm(LinkedList& list, int algorithm, int field) {
     auto start = std::chrono::high_resolution_clock::now();
     
     switch (algorithm) {
         case 1: {
-            // Bubble sort
+            // bubble sort
             if (!list.head || !list.head->next) break;
             
             bool swapped;
@@ -559,7 +524,7 @@ PerfMetrics sortLinkedListWithAlgorithm(LinkedList& list, int algorithm, int fie
         }
         
         case 2: {
-            // Quick sort — nodes are relinked, so update tail afterwards
+            // quick sort — nodes are relinked, so update tail after
             list.head = quickSortLinkedListHelper(list.head, field);
             if (list.head) {
                 Node* t = list.head;
@@ -572,7 +537,7 @@ PerfMetrics sortLinkedListWithAlgorithm(LinkedList& list, int algorithm, int fie
         }
 
         case 3: {
-            // Insertion sort — nodes are relinked, so update tail afterwards
+            // insertion sort — nodes are relinked, so update tail after
             list.head = insertionSortLinkedListHelper(list.head, field);
             if (list.head) {
                 Node* t = list.head;

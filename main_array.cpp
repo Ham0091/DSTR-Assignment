@@ -1,10 +1,7 @@
-// ============================================================
-// PROGRAM 1: ARRAY IMPLEMENTATION
+// --- program 1: array implementation ---
 // CT077-3-2-DSTR - Carbon Emission Analysis using Fixed Arrays
-// ============================================================
-// This program demonstrates all operations using ResidentArray only.
-// Companion program: main_list.cpp (linked list implementation)
-// ============================================================
+// array-only run, no list stuff here
+// see main_list.cpp for the linked list version
 
 #include "dataStructures.hpp"
 #include "analysis.hpp"
@@ -15,7 +12,7 @@
 #include <iomanip>
 #include <cmath>
 
-// Helper: deep copy a ResidentArray
+// helper: deep copy a ResidentArray (good enough for this)
 ResidentArray copyArray(const ResidentArray& src) {
     ResidentArray copy;
     copy.count = src.count;
@@ -46,9 +43,7 @@ int main() {
     printCentered("DSTR Assignment - Urban Carbon Emission Analysis");
     std::cout << std::string(80, '=') << "\n";
 
-    // ========================================================
-    // SECTION 1: LOAD DATA INTO FIXED-SIZE ARRAY
-    // ========================================================
+    // -- section 1: load data into the fixed array --
     printSec("SECTION 1: LOADING DATA INTO FIXED-SIZE ARRAY (MAX_SIZE=600)");
 
     ResidentArray arr;
@@ -63,9 +58,7 @@ int main() {
         loadCSV(arr, FILES[i], CITIES[i]);
     }
 
-    // ========================================================
-    // SECTION 2: DATA VERIFICATION
-    // ========================================================
+    // -- section 2: quick data sanity check --
     printSec("SECTION 2: DATA VERIFICATION");
 
     std::cout << "Total residents loaded : " << arr.count << "\n";
@@ -85,16 +78,12 @@ int main() {
     printHorizontalLine();
     for (int i = 0; i < 5 && i < arr.count; i++) printResident(arr.data[i]);
 
-    // ========================================================
-    // SECTION 3: CARBON EMISSION ANALYSIS (ARRAY)
-    // ========================================================
+    // -- section 3: carbon analysis (array) --
     printSec("SECTION 3: CARBON EMISSION ANALYSIS");
     analyzeEmissionsByAgeGroupArray(arr);
     analyzeEmissionsByModeArray(arr);
 
-    // ========================================================
-    // EXPERIMENT 1: SORTING ALGORITHM COMPARISON
-    // ========================================================
+    // -- experiment 1: sorting algorithm comparison --
     printExpHeader("SORTING ALGORITHM COMPARISON - Bubble vs Quick vs Insertion (Array)");
 
     std::cout << "HYPOTHESIS:\n";
@@ -140,9 +129,7 @@ int main() {
     else
         std::cout << "  [~] Small n limits visible difference; grows at scale (see Exp 4)\n";
 
-    // ========================================================
-    // EXPERIMENT 2: DATA STATE IMPACT (BUBBLE SORT - ARRAY)
-    // ========================================================
+    // -- experiment 2: data state impact (bubble sort, array) --
     printExpHeader("DATA STATE IMPACT - Bubble Sort on Random vs Sorted (Array)");
 
     std::cout << "HYPOTHESIS:\n";
@@ -152,8 +139,8 @@ int main() {
     std::cout << "DATA: Same array sorted twice with Bubble Sort.\n\n";
 
     ResidentArray stateTest = copyArray(arr);
-    PerfMetrics pass1 = sortArrayWithAlgorithm(stateTest, 1, 1);  // random -> sorted
-    PerfMetrics pass2 = sortArrayWithAlgorithm(stateTest, 1, 1);  // already sorted
+    PerfMetrics pass1 = sortArrayWithAlgorithm(stateTest, 1, 1);  // pass 1: random -> sorted
+    PerfMetrics pass2 = sortArrayWithAlgorithm(stateTest, 1, 1);  // pass 2: already sorted
 
     std::cout << "EXECUTION RESULTS:\n";
     std::cout << "  1st pass (random data) : " << pass1.executionTimeUs << " us  -> O(n^2)\n";
@@ -172,9 +159,7 @@ int main() {
     else
         std::cout << "  [~] Modern CPU branch prediction may reduce the observable difference\n";
 
-    // ========================================================
-    // EXPERIMENT 3: LINEAR vs BINARY SEARCH (ARRAY)
-    // ========================================================
+    // -- experiment 3: linear vs binary search (array) --
     printExpHeader("LINEAR vs BINARY SEARCH (Array)");
 
     std::cout << "HYPOTHESIS:\n";
@@ -218,9 +203,7 @@ int main() {
     std::cout << "  NOTE: Binary search requires pre-sorted data (sorting cost not included).\n";
     std::cout << "  Array's O(1) index access makes binary search highly effective.\n";
 
-    // ========================================================
-    // EXPERIMENT 4: SCALING TEST (ARRAY)
-    // ========================================================
+    // -- experiment 4: scaling test (array) --
     printExpHeader("SCALING TEST - O(n^2) vs O(n log n) Growth (Array)");
 
     std::cout << "HYPOTHESIS:\n";
@@ -276,9 +259,7 @@ int main() {
               << (((double)medium.count/small.count)*((double)medium.count/small.count)) << "x.\n";
     std::cout << "  Quick Sort grows much slower - critical advantage at scale.\n";
 
-    // ========================================================
-    // EXPERIMENT 5: REAL-WORLD QUERY (ARRAY)
-    // ========================================================
+    // -- experiment 5: real-world query (array) --
     printExpHeader("REAL-WORLD QUERY - High Carbon Emitters (Array)");
 
     std::cout << "HYPOTHESIS:\n";
@@ -314,14 +295,10 @@ int main() {
         std::cout << "  [~] Sort overhead minimal here; sorted array enables fast future queries.\n";
     std::cout << "  Strategy: sort once, query many times = O(n log n) + k*O(log n) total.\n";
 
-    // ========================================================
-    // CITY PLANNER RECOMMENDATIONS
-    // ========================================================
+    // -- city planner recommendations --
     printCityPlannerRecommendations(arr);
 
-    // ========================================================
-    // PROGRAM SUMMARY
-    // ========================================================
+    // -- program summary --
     std::cout << "\n\n";
     std::cout << std::string(80, '=') << "\n";
     printCentered("PROGRAM 1 COMPLETE - ARRAY IMPLEMENTATION SUMMARY");
